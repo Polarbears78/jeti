@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0f172a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>보일 법칙 가상 실험</title>
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>보일 법칙 가상 실험</h1>
+    <p class="subtitle">온도가 일정할 때, 기체의 압력과 부피 관계</p>
+  </header>
+
+  <main class="container">
+    <!-- 실험 장치: 주사기(피스톤) -->
+    <section class="stage" aria-label="기체 실린더 실험 장치">
+      <div class="syringe" id="syringe">
+        <!-- 압력 게이지 -->
+        <div class="gauge" id="gauge" aria-hidden="true">
+          <div class="gauge-needle" id="gaugeNeedle"></div>
+          <span class="gauge-label">P</span>
+        </div>
+
+        <!-- 기체가 들어있는 챔버 -->
+        <div class="chamber">
+          <div class="gas" id="gas">
+            <canvas id="particles"></canvas>
+          </div>
+          <!-- 피스톤(손잡이) -->
+          <div class="piston" id="piston" role="slider"
+               aria-label="피스톤 위치로 부피 조절"
+               aria-valuemin="1" aria-valuemax="10" aria-valuenow="5"
+               tabindex="0">
+            <div class="piston-grip">
+              <span class="grip-line"></span>
+              <span class="grip-line"></span>
+              <span class="grip-line"></span>
+            </div>
+            <div class="piston-hint">⇅ 끌어서 부피 조절</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 측정값 카드 -->
+    <section class="readouts" aria-label="측정값">
+      <div class="card">
+        <span class="card-label">부피 V</span>
+        <span class="card-value"><b id="volVal">5.0</b> L</span>
+      </div>
+      <div class="card">
+        <span class="card-label">압력 P</span>
+        <span class="card-value"><b id="presVal">1.00</b> atm</span>
+      </div>
+      <div class="card highlight">
+        <span class="card-label">P × V</span>
+        <span class="card-value"><b id="pvVal">5.00</b></span>
+      </div>
+    </section>
+
+    <!-- 슬라이더(손가락 조작 보조) -->
+    <section class="controls">
+      <label class="slider-row">
+        <span>부피 조절</span>
+        <input type="range" id="volSlider" min="1" max="10" step="0.1" value="5" />
+      </label>
+      <div class="temp-row">
+        <span>온도: <b id="tempVal">300</b> K (일정)</span>
+        <button class="reset-btn" id="resetBtn" type="button">초기화</button>
+      </div>
+    </section>
+
+    <!-- P-V 그래프 -->
+    <section class="graph-section" aria-label="압력-부피 그래프">
+      <div class="graph-head">
+        <h2>P–V 그래프</h2>
+        <span class="legend">실시간 측정점 ●</span>
+      </div>
+      <canvas id="graph"></canvas>
+    </section>
+
+    <!-- 설명 -->
+    <section class="explain">
+      <h2>보일 법칙이란?</h2>
+      <p>
+        온도가 일정할 때, 일정량의 기체의 <b>부피</b>는 <b>압력</b>에
+        <b>반비례</b>합니다. 부피를 줄이면 기체 입자가 벽에 부딪히는
+        횟수가 늘어 압력이 커집니다.
+      </p>
+      <p class="formula">P₁V₁ = P₂V₂ = 일정</p>
+      <p class="tip">💡 피스톤을 위아래로 끌거나 슬라이더를 움직여 보세요.
+        부피가 절반이 되면 압력은 두 배가 됩니다.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>중학교 과학 · 보일 법칙 시뮬레이션</p>
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
