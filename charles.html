@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#1a1008" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>샤를 법칙 가상 실험</title>
+<link rel="stylesheet" href="charles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>샤를 법칙 가상 실험</h1>
+    <p class="subtitle">압력이 일정할 때, 기체의 온도와 부피 관계</p>
+    <nav class="page-nav">
+      <a href="index.html">보일 법칙</a>
+      <a href="charles.html" class="active" aria-current="page">샤를 법칙</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- 실험 장치: 가열되는 실린더 -->
+    <section class="stage" aria-label="기체 실린더 실험 장치">
+      <div class="syringe" id="syringe">
+        <!-- 온도계 -->
+        <div class="thermo" aria-hidden="true">
+          <div class="thermo-track">
+            <div class="thermo-fill" id="thermoFill"></div>
+          </div>
+          <div class="thermo-bulb"></div>
+        </div>
+
+        <!-- 기체 챔버 (위로 열림: 가열 시 피스톤이 올라감) -->
+        <div class="chamber">
+          <!-- 피스톤(일정 압력: 위에서 누르는 추) -->
+          <div class="piston" id="piston" aria-hidden="true">
+            <div class="weight">⬛ 일정한 압력</div>
+            <div class="piston-grip">
+              <span class="grip-line"></span>
+              <span class="grip-line"></span>
+            </div>
+          </div>
+          <div class="gas" id="gas">
+            <canvas id="particles"></canvas>
+          </div>
+        </div>
+
+        <!-- 가열 불꽃 -->
+        <div class="burner" id="burner" aria-hidden="true">
+          <div class="flame f1"></div>
+          <div class="flame f2"></div>
+          <div class="flame f3"></div>
+          <div class="burner-base"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 입자 평균 속력 표시 -->
+    <section class="speed-strip" aria-label="입자의 평균 속력">
+      <span class="ss-label">입자 평균 속력</span>
+      <div class="ss-bar">
+        <div class="ss-fill" id="speedFill"></div>
+      </div>
+      <span class="ss-value"><b id="speedVal">1.00</b>×</span>
+    </section>
+
+    <!-- 측정값 카드 -->
+    <section class="readouts" aria-label="측정값">
+      <div class="card">
+        <span class="card-label">온도 T</span>
+        <span class="card-value"><b id="tempVal">300</b> K</span>
+      </div>
+      <div class="card">
+        <span class="card-label">부피 V</span>
+        <span class="card-value"><b id="volVal">5.0</b> L</span>
+      </div>
+      <div class="card highlight">
+        <span class="card-label">V ÷ T</span>
+        <span class="card-value"><b id="vtVal">0.0167</b></span>
+      </div>
+    </section>
+
+    <!-- 온도 슬라이더 -->
+    <section class="controls">
+      <label class="slider-row">
+        <span>온도 조절 (가열 / 냉각)</span>
+        <input type="range" id="tempSlider" min="100" max="600" step="1" value="300" />
+      </label>
+      <div class="info-row">
+        <span>압력: <b id="presVal">1.0</b> atm (일정)</span>
+        <button class="reset-btn" id="resetBtn" type="button">초기화</button>
+      </div>
+    </section>
+
+    <!-- V-T 그래프 -->
+    <section class="graph-section" aria-label="부피-온도 그래프">
+      <div class="graph-head">
+        <h2>V–T 그래프</h2>
+        <span class="legend">실시간 측정점 ●</span>
+      </div>
+      <canvas id="graph"></canvas>
+    </section>
+
+    <!-- 설명 -->
+    <section class="explain">
+      <h2>샤를 법칙이란?</h2>
+      <p>
+        압력이 일정할 때, 일정량의 기체의 <b>부피</b>는 <b>절대온도</b>(K)에
+        <b>정비례</b>합니다. 온도를 높이면 기체 입자가 더 <b>빠르게</b>
+        운동하여 피스톤을 밀어 올리므로 부피가 커집니다.
+      </p>
+      <p class="formula">V₁ / T₁ = V₂ / T₂ = 일정</p>
+      <p class="tip">💡 슬라이더로 온도를 올려 보세요. 입자의 <b>속력</b>이
+        빨라지고(속력 ∝ √T), 피스톤이 올라가 <b>부피</b>가 늘어납니다.
+        압력이 일정하므로 입자 개수는 변하지 않습니다.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>중학교 과학 · 샤를 법칙 시뮬레이션</p>
+  </footer>
+
+  <script src="charles.js"></script>
+</body>
+</html>

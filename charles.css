@@ -1,0 +1,288 @@
+:root {
+  --bg: #1a1008;
+  --bg-soft: #2a1c10;
+  --card: #2a1c10;
+  --card-line: #4a3420;
+  --text: #fef3e2;
+  --muted: #c9a888;
+  --accent: #fb923c;
+  --accent-2: #f43f5e;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: contain;
+}
+
+.app-header {
+  text-align: center;
+  padding: calc(16px + var(--safe-top)) 16px 8px;
+}
+.app-header h1 { margin: 0; font-size: 1.35rem; letter-spacing: -0.02em; }
+.subtitle { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+.page-nav {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+.page-nav a {
+  font-size: 0.82rem;
+  text-decoration: none;
+  color: var(--muted);
+  background: var(--bg-soft);
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  padding: 6px 16px;
+}
+.page-nav a.active {
+  color: #1a1008;
+  background: var(--accent);
+  border-color: var(--accent);
+  font-weight: 700;
+}
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 16px calc(24px + var(--safe-bot));
+}
+
+/* ---- 실험 장치 ---- */
+.stage { display: flex; justify-content: center; padding: 8px 0 4px; }
+.syringe { position: relative; width: 150px; }
+
+/* 온도계 */
+.thermo {
+  position: absolute;
+  top: 10px; left: -46px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 4;
+}
+.thermo-track {
+  width: 12px;
+  height: 300px;
+  background: #3a2a18;
+  border: 2px solid #5a4028;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column-reverse;
+}
+.thermo-fill {
+  width: 100%;
+  height: 40%;
+  background: linear-gradient(0deg, #f43f5e, #fb923c);
+  transition: height 0.15s ease-out;
+}
+.thermo-bulb {
+  width: 22px; height: 22px;
+  margin-top: -4px;
+  border-radius: 50%;
+  background: #f43f5e;
+  border: 2px solid #5a4028;
+}
+
+/* 챔버: 위가 열려 피스톤이 오르내림 */
+.chamber {
+  position: relative;
+  height: 360px;
+  border: 4px solid #8a6a48;
+  border-radius: 16px 16px 0 0;
+  border-bottom: none;
+  background: linear-gradient(180deg, rgba(138,106,72,0.05), rgba(138,106,72,0.12));
+  overflow: hidden;
+}
+
+.gas {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(251,146,60,0.16), rgba(251,146,60,0.30));
+  border-top: 2px solid rgba(251,146,60,0.55);
+  transition: background 0.2s linear;
+}
+#particles { width: 100%; height: 100%; display: block; }
+
+.piston {
+  position: absolute;
+  left: -4px; right: -4px;
+  height: 42px;
+  background: linear-gradient(180deg, #9ca3af, #4b5563);
+  border-radius: 6px;
+  box-shadow: 0 4px 8px rgba(0,0,0,0.5), inset 0 2px 0 rgba(255,255,255,0.25);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  z-index: 3;
+  transition: bottom 0.12s ease-out;
+}
+.weight { font-size: 0.6rem; color: rgba(15,23,42,0.8); font-weight: 700; }
+.piston-grip { display: flex; flex-direction: column; gap: 3px; }
+.grip-line {
+  display: block; width: 36px; height: 3px;
+  background: rgba(15,23,42,0.4); border-radius: 2px;
+}
+
+/* 버너 / 불꽃 */
+.burner {
+  position: relative;
+  height: 56px;
+  margin-top: 2px;
+}
+.burner-base {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 90px; height: 10px;
+  background: #5a4028;
+  border-radius: 4px;
+}
+.flame {
+  position: absolute;
+  bottom: 8px;
+  width: 18px;
+  border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+  background: linear-gradient(0deg, #f43f5e, #fb923c 50%, #fde047);
+  transform-origin: bottom center;
+  opacity: 0.95;
+  filter: blur(0.4px);
+  animation: flicker 0.5s ease-in-out infinite alternate;
+}
+.flame.f1 { left: calc(50% - 26px); height: 34px; animation-delay: 0s; }
+.flame.f2 { left: calc(50% - 9px);  height: 46px; animation-delay: 0.12s; }
+.flame.f3 { left: calc(50% + 8px);  height: 34px; animation-delay: 0.24s; }
+@keyframes flicker {
+  from { transform: scaleY(0.92) scaleX(1.02); }
+  to   { transform: scaleY(1.08) scaleX(0.96); }
+}
+/* 불꽃 세기는 JS가 --heat(0~1)로 조절 */
+.burner { --heat: 0.4; }
+.flame { transform: scaleY(calc(0.4 + var(--heat) * 1.1)); opacity: calc(0.25 + var(--heat) * 0.75); }
+
+/* ---- 입자 평균 속력 ---- */
+.speed-strip {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 16px;
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.8rem; color: var(--muted);
+}
+.ss-label { white-space: nowrap; }
+.ss-bar {
+  flex: 1; height: 10px; border-radius: 6px;
+  background: var(--bg-soft); overflow: hidden;
+}
+.ss-fill {
+  height: 100%; width: 50%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, #38bdf8, var(--accent), var(--accent-2));
+  transition: width 0.15s ease-out;
+}
+.ss-value { white-space: nowrap; }
+.ss-value b { color: var(--accent); font-size: 0.95rem; }
+
+/* ---- 측정값 ---- */
+.readouts {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-top: 12px;
+}
+.card {
+  background: var(--card); border: 1px solid var(--card-line);
+  border-radius: 12px; padding: 10px 6px; text-align: center;
+}
+.card.highlight {
+  border-color: var(--accent-2);
+  background: linear-gradient(180deg, rgba(244,63,94,0.12), var(--card));
+}
+.card-label { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+.card-value { font-size: 0.95rem; }
+.card-value b { font-size: 1.15rem; color: var(--accent); }
+.card.highlight .card-value b { color: var(--accent-2); }
+
+/* ---- 컨트롤 ---- */
+.controls {
+  margin-top: 16px;
+  background: var(--card); border: 1px solid var(--card-line);
+  border-radius: 12px; padding: 14px;
+}
+.slider-row {
+  display: flex; flex-direction: column; gap: 8px;
+  font-size: 0.85rem; color: var(--muted);
+}
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px; border-radius: 4px;
+  background: linear-gradient(90deg, #38bdf8, var(--accent), var(--accent-2));
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--accent); cursor: pointer;
+}
+.info-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; font-size: 0.85rem; color: var(--muted);
+}
+.info-row b { color: var(--text); }
+.reset-btn {
+  background: var(--bg-soft); color: var(--text);
+  border: 1px solid var(--card-line); border-radius: 8px;
+  padding: 8px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.reset-btn:active { background: #1a1008; }
+
+/* ---- 그래프 ---- */
+.graph-section {
+  margin-top: 18px;
+  background: var(--card); border: 1px solid var(--card-line);
+  border-radius: 12px; padding: 14px;
+}
+.graph-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.graph-head h2 { margin: 0; font-size: 1rem; }
+.legend { font-size: 0.72rem; color: var(--accent-2); }
+#graph { width: 100%; height: 200px; display: block; }
+
+/* ---- 설명 ---- */
+.explain { margin-top: 18px; line-height: 1.6; font-size: 0.9rem; }
+.explain h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.explain p { margin: 0 0 10px; color: var(--text); }
+.formula {
+  text-align: center; font-size: 1.1rem; font-weight: 700;
+  color: var(--accent); background: var(--bg-soft);
+  border-radius: 10px; padding: 10px; letter-spacing: 0.04em;
+}
+.tip { font-size: 0.85rem; color: var(--muted) !important; }
+
+.app-footer {
+  text-align: center;
+  padding: 8px 16px calc(20px + var(--safe-bot));
+  font-size: 0.72rem; color: var(--muted);
+}
