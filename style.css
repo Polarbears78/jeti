@@ -169,12 +169,43 @@ html, body {
   font-weight: 600;
 }
 
+/* ---- 벽 충돌 빈도 ---- */
+.collision-strip {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 18px;
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+.cs-label { white-space: nowrap; }
+.cs-bar {
+  flex: 1;
+  height: 10px;
+  border-radius: 6px;
+  background: var(--bg-soft);
+  overflow: hidden;
+}
+.cs-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  transition: width 0.2s ease-out;
+}
+.cs-value { white-space: nowrap; }
+.cs-value b { color: var(--accent-2); font-size: 0.95rem; }
+
 /* ---- 측정값 ---- */
 .readouts {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  margin-top: 18px;
+  margin-top: 12px;
 }
 .card {
   background: var(--card);

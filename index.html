@@ -46,6 +46,15 @@
       </div>
     </section>
 
+    <!-- 벽 충돌 빈도 표시 -->
+    <section class="collision-strip" aria-label="기체 입자의 벽 충돌">
+      <span class="cs-label">벽 충돌</span>
+      <div class="cs-bar">
+        <div class="cs-fill" id="collisionFill"></div>
+      </div>
+      <span class="cs-value"><b id="collisionVal">0</b> 회/초</span>
+    </section>
+
     <!-- 측정값 카드 -->
     <section class="readouts" aria-label="측정값">
       <div class="card">
@@ -93,7 +102,9 @@
       </p>
       <p class="formula">P₁V₁ = P₂V₂ = 일정</p>
       <p class="tip">💡 피스톤을 위아래로 끌거나 슬라이더를 움직여 보세요.
-        부피가 절반이 되면 압력은 두 배가 됩니다.</p>
+        부피가 절반이 되면 압력은 두 배가 됩니다. 부피를 줄이면 입자가
+        벽(특히 피스톤)에 더 자주 부딪혀 <b>벽 충돌 횟수</b>가 늘어나는 것을
+        확인할 수 있어요. 온도가 일정하므로 입자의 <b>속력</b>은 변하지 않습니다.</p>
     </section>
   </main>
 

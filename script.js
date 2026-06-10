@@ -21,6 +21,8 @@
   const presVal = document.getElementById("presVal");
   const pvVal = document.getElementById("pvVal");
   const tempVal = document.getElementById("tempVal");
+  const collisionFill = document.getElementById("collisionFill");
+  const collisionVal = document.getElementById("collisionVal");
 
   tempVal.textContent = TEMP;
 
@@ -30,24 +32,33 @@
   }
 
   // ----- 입자 시뮬레이션 -----
+  // 온도가 일정 → 입자의 속력(SPEED)은 일정하게 유지한다.
+  // 부피가 줄면 캔버스(기체 공간)가 좁아져 벽 충돌이 잦아지고,
+  // 이것이 압력 증가로 이어지는 보일 법칙의 원리를 보여준다.
   const pCanvas = document.getElementById("particles");
   const pctx = pCanvas.getContext("2d");
-  const N_PARTICLES = 36;
+  const N_PARTICLES = 30;
   const particles = [];
+  const flashes = [];          // 벽 충돌 섬광 효과
+  const collisionTimes = [];   // 최근 충돌 시각(ms) 기록 → 충돌 빈도 계산
   let dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let SPEED = 1.6;             // 입자 속력(px/frame, 온도에 비례) — resize 시 보정
 
   function initParticles() {
     particles.length = 0;
+    const w = pCanvas.width || 100;
+    const h = pCanvas.height || 100;
+    const r = 4 * dpr;
     for (let i = 0; i < N_PARTICLES; i++) {
+      const ang = Math.random() * Math.PI * 2;
       particles.push({
-        x: Math.random(),          // 0..1 (정규화 위치)
-        y: Math.random(),
-        vx: (Math.random() - 0.5),
-        vy: (Math.random() - 0.5),
+        x: r + Math.random() * (w - 2 * r),
+        y: r + Math.random() * (h - 2 * r),
+        vx: Math.cos(ang),     // 단위 방향벡터 (속력은 SPEED로 일정)
+        vy: Math.sin(ang),
       });
     }
   }
-  initParticles();
 
   function sizeParticleCanvas() {
     const w = gasEl.clientWidth;
@@ -57,6 +68,18 @@
     pCanvas.height = h * dpr;
     pCanvas.style.width = w + "px";
     pCanvas.style.height = h + "px";
+    SPEED = 1.1 * dpr; // 온도 일정 → 화면 밀도에 맞춘 일정 속력
+    // 캔버스 경계 안으로 입자 재배치
+    const r = 4 * dpr;
+    for (const p of particles) {
+      if (p.x < r) p.x = r; else if (p.x > w * dpr - r) p.x = w * dpr - r;
+      if (p.y < r) p.y = r; else if (p.y > h * dpr - r) p.y = h * dpr - r;
+    }
+  }
+
+  function addFlash(x, y, side) {
+    flashes.push({ x: x, y: y, side: side, life: 1 });
+    collisionTimes.push(performance.now());
   }
 
   function drawParticles() {
@@ -64,26 +87,56 @@
     const h = pCanvas.height;
     if (w === 0 || h === 0) return;
     pctx.clearRect(0, 0, w, h);
-
-    // 부피가 작을수록 입자 속도(부딪힘) 체감이 커지도록 가속
-    const pressure = pressureFor(volume);
-    const speed = (0.6 + pressure * 0.5) * dpr * 1.4;
     const r = 4 * dpr;
 
-    pctx.fillStyle = "#bae6fd";
-    for (const p of particles) {
-      p.x += p.vx * speed / w;
-      p.y += p.vy * speed / h;
+    // --- 벽 충돌 섬광 (입자 뒤에 깔리도록 먼저 그림) ---
+    for (let i = flashes.length - 1; i >= 0; i--) {
+      const f = flashes[i];
+      const alpha = f.life * 0.8;
+      const rad = (1.4 - f.life) * 22 * dpr; // 퍼지는 반경
+      const grad = pctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, rad);
+      grad.addColorStop(0, `rgba(244,114,182,${alpha})`);
+      grad.addColorStop(1, "rgba(244,114,182,0)");
+      pctx.fillStyle = grad;
+      pctx.beginPath();
+      pctx.arc(f.x, f.y, rad, 0, Math.PI * 2);
+      pctx.fill();
+      f.life -= 0.08;
+      if (f.life <= 0) flashes.splice(i, 1);
+    }
 
-      if (p.x < 0) { p.x = 0; p.vx = Math.abs(p.vx); }
-      else if (p.x > 1) { p.x = 1; p.vx = -Math.abs(p.vx); }
-      if (p.y < 0) { p.y = 0; p.vy = Math.abs(p.vy); }
-      else if (p.y > 1) { p.y = 1; p.vy = -Math.abs(p.vy); }
+    // --- 입자 이동 + 벽 충돌 검출 ---
+    pctx.fillStyle = "#e0f2fe";
+    for (const p of particles) {
+      p.x += p.vx * SPEED;
+      p.y += p.vy * SPEED;
+
+      if (p.x < r) { p.x = r; p.vx = Math.abs(p.vx); addFlash(0, p.y, "L"); }
+      else if (p.x > w - r) { p.x = w - r; p.vx = -Math.abs(p.vx); addFlash(w, p.y, "R"); }
+      if (p.y < r) { p.y = r; p.vy = Math.abs(p.vy); addFlash(p.x, 0, "T"); }
+      else if (p.y > h - r) { p.y = h - r; p.vy = -Math.abs(p.vy); addFlash(p.x, h, "B"); }
 
       pctx.beginPath();
-      pctx.arc(p.x * w, p.y * h, r, 0, Math.PI * 2);
+      pctx.arc(p.x, p.y, r, 0, Math.PI * 2);
       pctx.fill();
     }
+
+    // --- 피스톤(천장) 벽: 충돌이 잦은 윗변을 강조 표시 ---
+    pctx.fillStyle = "rgba(244,114,182,0.18)";
+    pctx.fillRect(0, 0, w, 3 * dpr);
+  }
+
+  // 최근 1초간 충돌 횟수 → 충돌 빈도(회/초) 갱신
+  function updateCollisionRate() {
+    const now = performance.now();
+    while (collisionTimes.length && now - collisionTimes[0] > 1000) {
+      collisionTimes.shift();
+    }
+    const rate = collisionTimes.length; // 지난 1초 충돌 수
+    collisionVal.textContent = rate;
+    // 게이지 바: 0 ~ 대략 최대치(부피 최소일 때) 기준 정규화
+    const pct = Math.max(0, Math.min(100, (rate / 90) * 100));
+    collisionFill.style.width = pct + "%";
   }
 
   // ----- P-V 그래프 -----
@@ -270,6 +323,7 @@
   function onResize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
     sizeParticleCanvas();
+    if (particles.length === 0) initParticles();
     sizeGraph();
     layoutPiston();
     drawGraph();
@@ -280,8 +334,10 @@
   });
 
   // ----- 애니메이션 루프 -----
-  function loop() {
+  let lastRate = 0;
+  function loop(ts) {
     drawParticles();
+    if (!ts || ts - lastRate > 150) { updateCollisionRate(); lastRate = ts || 0; }
     requestAnimationFrame(loop);
   }
 
