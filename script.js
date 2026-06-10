@@ -267,6 +267,9 @@
     volume = Math.max(V_MIN, Math.min(V_MAX, v));
     if (!fromSlider) volSlider.value = volume.toFixed(1);
     layoutPiston();
+    // 부피가 바뀌면 기체 공간(시뮬레이션 캔버스) 높이도 함께 변해야
+    // 입자 개수는 그대로인 채 벽 충돌 빈도가 달라진다.
+    sizeParticleCanvas();
     updateReadouts();
     drawGraph();
   }
