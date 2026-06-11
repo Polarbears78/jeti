@@ -28,7 +28,7 @@ html, body {
 .app-header h1 { margin: 0; font-size: 1.3rem; letter-spacing: -0.02em; }
 .subtitle { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
 
-.page-nav { display: flex; justify-content: center; gap: 8px; margin-top: 12px; }
+.page-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
 .page-nav a {
   font-size: 0.82rem; text-decoration: none; color: var(--muted);
   background: var(--bg-soft); border: 1px solid var(--card-line);
