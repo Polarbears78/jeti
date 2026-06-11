@@ -378,3 +378,17 @@ input[type="range"]::-moz-range-thumb {
   font-size: 0.72rem;
   color: var(--muted);
 }
+/* 상위(실험 목록) 페이지로 돌아가는 링크 */
+.home-link {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+  background: var(--bg-soft);
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+.home-link:active { color: var(--text); }
