@@ -15,7 +15,11 @@
   let temp = T_REF;      // 현재 온도 (K)
 
   function volumeFor(t) { return CONST * t; }          // 부피 = 상수 × T
-  function speedFactor(t) { return Math.sqrt(t / T_REF); } // 속력 ∝ √T
+  // 입자 속력(상댓값): 시각적으로 뚜렷이 보이도록 온도에 정비례시킨다.
+  // (온도가 2배면 운동이 2배 활발해 보이도록 — 중학교 과정의 정성적 관계.
+  //  부피도 T에 비례해 커지므로 '상자 가로지르는 시간'은 일정하고
+  //  순간 속력만 또렷이 달라져, 상자 확대에 속력 변화가 가려지지 않는다.)
+  function speedFactor(t) { return t / T_REF; }
 
   // ----- DOM -----
   const chamber = document.querySelector(".chamber");
@@ -68,7 +72,7 @@
     pCanvas.height = h * dpr;
     pCanvas.style.width = w + "px";
     pCanvas.style.height = h + "px";
-    baseSpeed = 1.0 * dpr;
+    baseSpeed = 1.2 * dpr;
     const r = 4 * dpr;
     for (const p of particles) {
       if (p.x < r) p.x = r; else if (p.x > w * dpr - r) p.x = w * dpr - r;
