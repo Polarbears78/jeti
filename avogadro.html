@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#06201a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>아보가드로 법칙 가상 실험</title>
+<link rel="stylesheet" href="avogadro.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>아보가드로 법칙 가상 실험</h1>
+    <p class="subtitle">온도·압력이 일정할 때, 입자 수와 부피 관계</p>
+    <nav class="page-nav">
+      <a href="index.html">보일</a>
+      <a href="charles.html">샤를</a>
+      <a href="avogadro.html" class="active" aria-current="page">아보가드로</a>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- 실험 장치: 기체를 주입하는 실린더 -->
+    <section class="stage" aria-label="기체 실린더 실험 장치">
+      <div class="syringe" id="syringe">
+        <!-- 기체 챔버 (위로 열림: 주입 시 피스톤이 올라감) -->
+        <div class="chamber">
+          <!-- 피스톤(일정 압력: 위에서 누르는 추) -->
+          <div class="piston" id="piston" aria-hidden="true">
+            <div class="weight">⬛ 일정한 압력</div>
+            <div class="piston-grip">
+              <span class="grip-line"></span>
+              <span class="grip-line"></span>
+            </div>
+          </div>
+          <div class="gas" id="gas">
+            <canvas id="particles"></canvas>
+          </div>
+        </div>
+
+        <!-- 기체 주입구 -->
+        <div class="inlet" aria-hidden="true">
+          <div class="inlet-pipe"></div>
+          <div class="inlet-valve">⛽ 주입구</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 기체 양 조절 버튼 -->
+    <section class="pump-row" aria-label="기체 주입/배출">
+      <button class="pump-btn" id="releaseBtn" type="button">− 배출</button>
+      <span class="pump-label">기체 입자 <b id="countVal">20</b>개</span>
+      <button class="pump-btn" id="injectBtn" type="button">＋ 주입</button>
+    </section>
+
+    <!-- 측정값 카드 -->
+    <section class="readouts" aria-label="측정값">
+      <div class="card">
+        <span class="card-label">입자 수 N</span>
+        <span class="card-value"><b id="molVal">5.0</b> mol</span>
+      </div>
+      <div class="card">
+        <span class="card-label">부피 V</span>
+        <span class="card-value"><b id="volVal">5.0</b> L</span>
+      </div>
+      <div class="card highlight">
+        <span class="card-label">V ÷ N</span>
+        <span class="card-value"><b id="vnVal">1.00</b></span>
+      </div>
+    </section>
+
+    <!-- 기체 양 슬라이더 -->
+    <section class="controls">
+      <label class="slider-row">
+        <span>기체 양 조절 (mol)</span>
+        <input type="range" id="molSlider" min="1" max="10" step="0.5" value="5" />
+      </label>
+      <div class="info-row">
+        <span>온도 <b>300</b> K · 압력 <b>1.0</b> atm (일정)</span>
+        <button class="reset-btn" id="resetBtn" type="button">초기화</button>
+      </div>
+    </section>
+
+    <!-- V-N 그래프 -->
+    <section class="graph-section" aria-label="부피-입자수 그래프">
+      <div class="graph-head">
+        <h2>V–N 그래프</h2>
+        <span class="legend">실시간 측정점 ●</span>
+      </div>
+      <canvas id="graph"></canvas>
+    </section>
+
+    <!-- 설명 -->
+    <section class="explain">
+      <h2>아보가드로 법칙이란?</h2>
+      <p>
+        온도와 압력이 일정할 때, 기체의 <b>부피</b>는 기체 <b>입자 수</b>(몰 수)에
+        <b>정비례</b>합니다. 기체를 더 넣으면 입자가 많아진 만큼 부피가 커지고,
+        단위 부피당 입자 수(밀도)와 입자의 <b>속력</b>은 그대로 유지됩니다.
+      </p>
+      <p class="formula">V₁ / N₁ = V₂ / N₂ = 일정</p>
+      <p class="tip">💡 ‘주입/배출’ 버튼이나 슬라이더로 기체 양을 바꿔 보세요.
+        입자 수가 2배가 되면 부피도 2배가 됩니다. 밀도가 일정해
+        압력과 온도는 변하지 않습니다.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>중학교 과학 · 아보가드로 법칙 시뮬레이션</p>
+  </footer>
+
+  <script src="avogadro.js"></script>
+</body>
+</html>
