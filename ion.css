@@ -1,0 +1,195 @@
+:root {
+  --bg: #0b1026;
+  --bg-soft: #141b3a;
+  --card: #141b3a;
+  --card-line: #2a3566;
+  --text: #e8ecff;
+  --muted: #9aa6e0;
+  --accent: #6366f1;       /* 전기 보라 */
+  --accent-2: #22d3ee;     /* 청록 */
+  --cation: #f87171;       /* 양이온(+) 빨강 */
+  --anion: #60a5fa;        /* 음이온(−) 파랑 */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: contain;
+}
+
+.app-header { text-align: center; padding: calc(16px + var(--safe-top)) 16px 8px; }
+.app-header h1 { margin: 0; font-size: 1.3rem; letter-spacing: -0.02em; }
+.subtitle { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+.page-nav { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+.page-nav a {
+  font-size: 0.82rem; text-decoration: none; color: var(--muted);
+  background: var(--bg-soft); border: 1px solid var(--card-line);
+  border-radius: 999px; padding: 6px 16px;
+}
+.page-nav a.active {
+  color: #0b1026; background: var(--accent);
+  border-color: var(--accent); font-weight: 700;
+}
+
+.container {
+  max-width: 480px; margin: 0 auto;
+  padding: 8px 16px calc(24px + var(--safe-bot));
+}
+
+/* ---- 전원 장치(전지)와 스위치 ---- */
+.circuit {
+  display: flex; align-items: center; justify-content: center; gap: 14px;
+  margin-top: 6px;
+}
+.battery {
+  display: flex; align-items: stretch;
+  border: 2px solid var(--card-line); border-radius: 8px; overflow: hidden;
+  font-size: 0.8rem; background: var(--bg-soft);
+}
+.bt-term { display: flex; align-items: center; padding: 6px 10px; font-weight: 800; font-size: 1rem; }
+.bt-minus { background: rgba(96,165,250,0.18); color: var(--anion); }
+.bt-plus { background: rgba(248,113,113,0.18); color: var(--cation); }
+.bt-body { display: flex; align-items: center; padding: 6px 12px; color: var(--muted); letter-spacing: 0.05em; }
+
+.power-btn {
+  display: inline-flex; align-items: center; gap: 8px;
+  border: 1px solid var(--card-line); border-radius: 999px;
+  padding: 8px 16px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  background: var(--bg-soft); color: var(--muted);
+  transition: all 0.18s ease;
+}
+.power-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #4b5563; box-shadow: none; transition: all 0.18s ease;
+}
+.power-btn.on {
+  color: #0b1026; background: var(--accent-2); border-color: var(--accent-2);
+  box-shadow: 0 0 16px rgba(34,211,238,0.5);
+}
+.power-btn.on .power-dot {
+  background: #0b1026; box-shadow: 0 0 8px rgba(11,16,38,0.6);
+}
+
+/* ---- 실험 장치 (전해질 셀) ---- */
+.stage { display: flex; justify-content: center; padding: 14px 0 4px; }
+.cell {
+  position: relative;
+  display: flex; align-items: stretch;
+  width: 100%; max-width: 420px; height: 280px;
+  border: 4px solid #3a4a8c;
+  border-top: none;
+  border-radius: 0 0 18px 18px;
+  background: linear-gradient(180deg, rgba(99,102,241,0.05), rgba(34,211,238,0.10));
+  overflow: hidden;
+}
+
+/* 전극 */
+.electrode {
+  position: relative; z-index: 2;
+  width: 40px; flex: 0 0 40px;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  gap: 6px; padding-top: 10px;
+  color: #0b1026; font-weight: 800;
+}
+.cathode { background: linear-gradient(180deg, #93c5fd, #3b82f6); }
+.anode { background: linear-gradient(180deg, #fca5a5, #ef4444); }
+.el-sign { font-size: 1.5rem; line-height: 1; }
+.el-name { font-size: 0.72rem; letter-spacing: 0.02em; }
+.cathode.live { box-shadow: 0 0 22px rgba(59,130,246,0.8) inset; }
+.anode.live { box-shadow: 0 0 22px rgba(239,68,68,0.8) inset; }
+
+/* 수용액 */
+.solution {
+  position: relative; flex: 1 1 auto;
+  background: linear-gradient(180deg, rgba(34,211,238,0.06), rgba(34,211,238,0.14));
+}
+#ions { width: 100%; height: 100%; display: block; }
+.sol-label {
+  position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%);
+  font-size: 0.72rem; color: rgba(154,166,224,0.7); pointer-events: none;
+  white-space: nowrap;
+}
+
+/* ---- 이온 범례 ---- */
+.legend-row {
+  display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;
+  margin-top: 14px; font-size: 0.8rem; color: var(--muted);
+}
+.ion-key { display: inline-flex; align-items: center; gap: 6px; }
+.ion-key .dot { width: 12px; height: 12px; border-radius: 50%; }
+.ion-key.cation .dot { background: var(--cation); }
+.ion-key.anion .dot { background: var(--anion); }
+
+/* ---- 측정값 ---- */
+.readouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.card { background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 10px 6px; text-align: center; }
+.card.highlight { border-color: var(--accent-2); background: linear-gradient(180deg, rgba(34,211,238,0.12), var(--card)); }
+.card-label { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+.card-value { font-size: 0.95rem; }
+.card-value b { font-size: 1.15rem; color: var(--accent); }
+.card.highlight .card-value b { color: var(--accent-2); }
+
+/* ---- 컨트롤 ---- */
+.controls { margin-top: 16px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 14px; }
+.slider-row { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: var(--muted); }
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px; border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--accent); cursor: pointer;
+}
+.info-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; font-size: 0.8rem; color: var(--muted); }
+.reset-btn {
+  flex: 0 0 auto;
+  background: var(--bg-soft); color: var(--text);
+  border: 1px solid var(--card-line); border-radius: 8px;
+  padding: 8px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.reset-btn:active { background: #0b1026; }
+
+/* ---- 설명 ---- */
+.explain { margin-top: 18px; line-height: 1.6; font-size: 0.9rem; }
+.explain h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.explain p { margin: 0 0 10px; color: var(--text); }
+.formula {
+  text-align: center; font-size: 1.05rem; font-weight: 700;
+  color: var(--accent-2); background: var(--bg-soft);
+  border-radius: 10px; padding: 10px; letter-spacing: 0.02em;
+}
+.tip { font-size: 0.85rem; color: var(--muted) !important; }
+
+.app-footer { text-align: center; padding: 8px 16px calc(20px + var(--safe-bot)); font-size: 0.72rem; color: var(--muted); }
+/* 상위(실험 목록) 페이지로 돌아가는 링크 */
+.home-link {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+  background: var(--bg-soft);
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+.home-link:active { color: var(--text); }
