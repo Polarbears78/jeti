@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#04100b" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>소리 분석 오실로스코프</title>
+<link rel="stylesheet" href="wave.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a class="home-link" href="index.html">← 실험 목록</a>
+    <h1>소리 분석 오실로스코프</h1>
+    <p class="subtitle">소리의 세기와 높이를 바꿔 파형을 관찰</p>
+  </header>
+
+  <main class="container">
+    <!-- 오실로스코프 화면 -->
+    <section class="stage" aria-label="오실로스코프 화면">
+      <div class="scope">
+        <canvas id="scope"></canvas>
+        <span class="scope-label" aria-hidden="true">OSCILLOSCOPE</span>
+      </div>
+    </section>
+
+    <!-- 소리 재생 -->
+    <section class="sound-row" aria-label="소리 재생">
+      <button class="play-btn off" id="playBtn" type="button" aria-pressed="false">
+        <span class="play-ico" aria-hidden="true">▶</span>
+        <span class="play-text">소리 듣기</span>
+      </button>
+      <span class="sound-hint">🔊 휴대폰 음량을 켜고 들어 보세요</span>
+    </section>
+
+    <!-- 측정값 카드 -->
+    <section class="readouts" aria-label="측정값">
+      <div class="card">
+        <span class="card-label">세기(진폭)</span>
+        <span class="card-value"><b id="ampVal">60</b> %</span>
+      </div>
+      <div class="card highlight">
+        <span class="card-label">높이(진동수)</span>
+        <span class="card-value"><b id="freqVal">300</b> Hz</span>
+      </div>
+      <div class="card">
+        <span class="card-label">주기 T</span>
+        <span class="card-value"><b id="periodVal">3.3</b> ms</span>
+      </div>
+      <div class="card">
+        <span class="card-label">파장 λ</span>
+        <span class="card-value"><b id="waveVal">1.13</b> m</span>
+      </div>
+    </section>
+
+    <!-- 컨트롤 -->
+    <section class="controls">
+      <label class="slider-row">
+        <span>소리의 세기 (진폭) — 클수록 큰 소리</span>
+        <input type="range" id="ampSlider" min="0" max="100" step="1" value="60" />
+      </label>
+      <label class="slider-row" style="margin-top:14px;">
+        <span>소리의 높이 (진동수) — 클수록 높은 소리</span>
+        <input type="range" id="freqSlider" min="100" max="800" step="10" value="300" />
+      </label>
+      <div class="info-row">
+        <span>소리의 속력 340 m/s 기준 (λ = v ÷ f)</span>
+        <button class="reset-btn" id="resetBtn" type="button">초기화</button>
+      </div>
+    </section>
+
+    <!-- 설명 -->
+    <section class="explain">
+      <h2>소리의 세기·높이와 파형</h2>
+      <p>
+        오실로스코프는 소리의 진동을 <b>파형</b>으로 보여 줍니다.
+        <b>진폭</b>(파동의 높이)이 클수록 소리의 <b>세기</b>가 커져 더 큰 소리가 나고,
+        <b>진동수</b>(1초당 진동 횟수, Hz)가 클수록 소리의 <b>높이</b>가 높아집니다.
+      </p>
+      <p class="formula">세기 ∝ 진폭 ｜ 높이 ∝ 진동수 ｜ λ = v ÷ f</p>
+      <p class="tip">💡 ‘세기’ 슬라이더를 올리면 파형이 위아래로 커지고(소리가 커짐),
+        ‘높이’ 슬라이더를 올리면 같은 화면에 물결이 더 촘촘해집니다(진동수↑, 파장↓).
+        ‘소리 듣기’를 켜면 실제 음높이와 크기가 함께 바뀌는 것을 들을 수 있어요.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>중학교 과학 · 소리(파동) 오실로스코프 시뮬레이션</p>
+  </footer>
+
+  <script src="wave.js"></script>
+</body>
+</html>
