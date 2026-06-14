@@ -10,6 +10,7 @@
   --charles: #fb923c;
   --avogadro: #34d399;
   --ion: #818cf8;
+  --wave: #2dd4bf;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bot: env(safe-area-inset-bottom, 0px);
 }
@@ -85,7 +86,11 @@ html, body {
 .exp-card.charles { --theme: var(--charles); }
 .exp-card.avogadro { --theme: var(--avogadro); }
 .exp-card.ion { --theme: var(--ion); }
+.exp-card.wave { --theme: var(--wave); }
 .exp-card:active { border-color: var(--theme); }
+
+/* 홀수 개일 때 마지막 카드는 한 줄 전체 차지 */
+.exp-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
 
 .exp-icon {
   display: flex;
