@@ -1,0 +1,118 @@
+:root {
+  --bg: #0d1117;
+  --bg-soft: #161d2b;
+  --card: #161d2b;
+  --card-line: #2b3650;
+  --text: #e6edf7;
+  --muted: #93a3bd;
+  --accent: #38bdf8;       /* 전류(파랑) */
+  --accent-2: #fb7185;     /* 저항(로즈) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: contain;
+}
+
+.app-header { text-align: center; padding: calc(16px + var(--safe-top)) 16px 8px; }
+.app-header h1 { margin: 0; font-size: 1.3rem; letter-spacing: -0.02em; }
+.subtitle { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+.container {
+  max-width: 480px; margin: 0 auto;
+  padding: 8px 16px calc(24px + var(--safe-bot));
+}
+
+/* ---- 회로도 ---- */
+.stage { display: flex; justify-content: center; padding: 10px 0 4px; }
+#circuit {
+  width: 100%; max-width: 380px; height: auto; display: block;
+  background: radial-gradient(ellipse at 50% 40%, rgba(251,113,133,0.06), rgba(13,17,23,0) 70%);
+  border: 1px solid var(--card-line); border-radius: 14px;
+}
+.cmp-label { fill: var(--muted); font-size: 9px; text-anchor: middle; font-family: inherit; }
+.cmp-sign { fill: #facc15; font-size: 11px; font-weight: 800; text-anchor: middle; }
+.meter-letter { font-size: 13px; font-weight: 800; text-anchor: middle; font-family: inherit; }
+.electron { fill: #7dd3fc; }
+
+/* ---- 측정값 ---- */
+.readouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.card { background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 10px 6px; text-align: center; }
+.card.highlight { border-color: var(--accent); background: linear-gradient(180deg, rgba(56,189,248,0.12), var(--card)); }
+.card-label { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+.card-value { font-size: 0.95rem; }
+.card-value b { font-size: 1.18rem; color: var(--accent-2); }
+.card.highlight .card-value b { color: var(--accent); }
+
+/* ---- 컨트롤 ---- */
+.controls { margin-top: 16px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 14px; }
+.slider-row { display: flex; flex-direction: column; gap: 8px; font-size: 0.85rem; color: var(--muted); }
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px; border-radius: 4px;
+  background: linear-gradient(90deg, var(--accent), var(--accent-2));
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--accent); cursor: pointer;
+}
+.info-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 16px; font-size: 0.78rem; color: var(--muted); }
+.reset-btn {
+  flex: 0 0 auto;
+  background: var(--bg-soft); color: var(--text);
+  border: 1px solid var(--card-line); border-radius: 8px;
+  padding: 8px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.reset-btn:active { background: #0d1117; }
+
+/* ---- 그래프 ---- */
+.graph-section { margin-top: 18px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 14px; }
+.graph-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.graph-head h2 { margin: 0; font-size: 1rem; }
+.legend { font-size: 0.7rem; color: var(--accent-2); }
+#graph { width: 100%; height: 210px; display: block; }
+
+/* ---- 설명 ---- */
+.explain { margin-top: 18px; line-height: 1.6; font-size: 0.9rem; }
+.explain h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.explain p { margin: 0 0 10px; color: var(--text); }
+.formula {
+  text-align: center; font-size: 1.05rem; font-weight: 700;
+  color: var(--accent-2); background: var(--bg-soft);
+  border-radius: 10px; padding: 10px; letter-spacing: 0.02em;
+}
+.tip { font-size: 0.85rem; color: var(--muted) !important; }
+
+.app-footer { text-align: center; padding: 8px 16px calc(20px + var(--safe-bot)); font-size: 0.72rem; color: var(--muted); }
+
+/* 상위(실험 목록) 페이지로 돌아가는 링크 */
+.home-link {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+  background: var(--bg-soft);
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+.home-link:active { color: var(--text); }

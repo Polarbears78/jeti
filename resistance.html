@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0d1117" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>전류와 저항 가상 실험</title>
+<link rel="stylesheet" href="resistance.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a class="home-link" href="index.html">← 실험 목록</a>
+    <h1>전류와 저항 가상 실험</h1>
+    <p class="subtitle">전압이 일정할 때, 전류와 저항의 관계</p>
+  </header>
+
+  <main class="container">
+    <!-- 회로도 -->
+    <section class="stage" aria-label="전기 회로">
+      <svg id="circuit" viewBox="0 0 320 200" role="img" aria-label="전지·저항·전류계로 이루어진 회로">
+        <!-- 도선(사각 고리) -->
+        <path id="wirePath" d="M40,50 H280 V170 H40 Z" fill="none"
+              stroke="#475569" stroke-width="4" stroke-linejoin="round" />
+
+        <!-- 전류 입자가 흐르는 그룹 -->
+        <g id="electrons"></g>
+
+        <!-- 저항 (윗변, 지그재그) -->
+        <g id="resistorG">
+          <rect id="resBox" x="120" y="36" width="80" height="28" rx="5"
+                fill="#0d1117" stroke="#fb7185" stroke-width="2.5" />
+          <polyline id="resZig" points="" fill="none" stroke="#fb7185" stroke-width="2.5"
+                    stroke-linejoin="round" stroke-linecap="round" />
+          <text x="160" y="30" class="cmp-label">저항 R = <tspan id="resTag">4</tspan> Ω</text>
+        </g>
+
+        <!-- 전지 (왼쪽 변, 전압 일정) -->
+        <g id="batteryG">
+          <line x1="40" y1="86" x2="40" y2="94" stroke="#475569" stroke-width="4" />
+          <line x1="24" y1="86" x2="56" y2="86" stroke="#facc15" stroke-width="5" />
+          <line x1="31" y1="106" x2="49" y2="106" stroke="#cbd5e1" stroke-width="3" />
+          <line x1="40" y1="106" x2="40" y2="114" stroke="#475569" stroke-width="4" />
+          <text x="40" y="140" class="cmp-label">전지(일정)</text>
+          <text x="62" y="82" class="cmp-sign">＋</text>
+          <text x="62" y="118" class="cmp-sign">−</text>
+        </g>
+
+        <!-- 전류계 A (오른쪽 변, 직렬) -->
+        <g id="ammeterG">
+          <circle cx="280" cy="110" r="16" fill="#0d1117" stroke="#38bdf8" stroke-width="2.5" />
+          <text x="280" y="115" class="meter-letter" fill="#38bdf8">A</text>
+        </g>
+      </svg>
+    </section>
+
+    <!-- 측정값 카드 -->
+    <section class="readouts" aria-label="측정값">
+      <div class="card">
+        <span class="card-label">전압 V (일정)</span>
+        <span class="card-value"><b id="voltVal">6.0</b> V</span>
+      </div>
+      <div class="card">
+        <span class="card-label">저항 R</span>
+        <span class="card-value"><b id="resVal">4</b> Ω</span>
+      </div>
+      <div class="card highlight">
+        <span class="card-label">전류 I = V÷R</span>
+        <span class="card-value"><b id="currVal">1.50</b> A</span>
+      </div>
+    </section>
+
+    <!-- 컨트롤 -->
+    <section class="controls">
+      <label class="slider-row">
+        <span>저항 조절 — 클수록 전류 ↓ (반비례)</span>
+        <input type="range" id="resSlider" min="1" max="10" step="1" value="4" />
+      </label>
+      <label class="slider-row" style="margin-top:14px;">
+        <span>전압 조절 (일정하게 유지할 값) — 곡선 전체가 바뀜</span>
+        <input type="range" id="voltSlider" min="2" max="10" step="1" value="6" />
+      </label>
+      <div class="info-row">
+        <span>저항을 바꾸면 그래프에 측정점이 찍힙니다</span>
+        <button class="reset-btn" id="resetBtn" type="button">초기화</button>
+      </div>
+    </section>
+
+    <!-- R-I 그래프 -->
+    <section class="graph-section" aria-label="저항-전류 그래프">
+      <div class="graph-head">
+        <h2>저항–전류 그래프</h2>
+        <span class="legend">측정점 ● · 반비례 곡선</span>
+      </div>
+      <canvas id="graph"></canvas>
+    </section>
+
+    <!-- 설명 -->
+    <section class="explain">
+      <h2>전류와 저항의 관계</h2>
+      <p>
+        전압이 일정할 때 도선에 흐르는 <b>전류(I)</b>는 <b>저항(R)</b>에
+        <b>반비례</b>합니다. 저항이 2배가 되면 전류는 절반으로 줄어듭니다.
+      </p>
+      <p class="formula">I = V ÷ R ｜ 전압 일정 → I ∝ 1/R</p>
+      <p class="tip">💡 ‘저항’ 슬라이더를 키우면 전류가 줄어들어 회로의 전자가 더
+        천천히 흐르고, 저항–전류 그래프는 <b>반비례 곡선</b>을 그립니다.
+        전압을 바꾸면(일정하게 유지할 값) 곡선 전체가 위아래로 이동합니다.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>중학교 과학 · 전류와 저항(반비례) 시뮬레이션</p>
+  </footer>
+
+  <script src="resistance.js"></script>
+</body>
+</html>
