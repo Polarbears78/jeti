@@ -1,0 +1,151 @@
+:root {
+  --bg: #0a0f0a;
+  --bg-soft: #131c14;
+  --card: #131c14;
+  --card-line: #294a30;
+  --text: #e9f7ec;
+  --muted: #8fc59c;
+  --accent: #4ade80;       /* 라임 그린 */
+  --accent-2: #f59e0b;     /* 가속도 강조(주황) */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: contain;
+}
+
+.app-header { text-align: center; padding: calc(16px + var(--safe-top)) 16px 8px; }
+.app-header h1 { margin: 0; font-size: 1.3rem; letter-spacing: -0.02em; }
+.subtitle { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+.container {
+  max-width: 480px; margin: 0 auto;
+  padding: 8px 16px calc(24px + var(--safe-bot));
+}
+
+/* ---- 카메라 배경 + HUD ---- */
+.stage { display: flex; justify-content: center; padding: 10px 0 4px; }
+.viewport {
+  position: relative; width: 100%;
+  aspect-ratio: 3 / 4; max-height: 60vh;
+  border: 1px solid var(--card-line); border-radius: 14px;
+  overflow: hidden; background: #050805;
+}
+#video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
+  background: #050805;
+}
+.hud {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; pointer-events: none;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+}
+.hud-main { display: flex; align-items: baseline; gap: 6px; }
+.hud-num {
+  font-size: 3.4rem; font-weight: 800; line-height: 1;
+  color: var(--accent);
+}
+.hud-unit { font-size: 1rem; color: var(--accent); font-weight: 700; }
+.hud-axes { display: flex; flex-direction: column; gap: 6px; width: 70%; max-width: 240px; }
+.axis { display: flex; align-items: center; gap: 8px; }
+.ax-name { width: 14px; font-size: 0.78rem; font-weight: 800; color: #e9f7ec; }
+.ax-bar {
+  position: relative; flex: 1; height: 8px; border-radius: 4px;
+  background: rgba(255,255,255,0.18); overflow: hidden;
+}
+.ax-bar i {
+  position: absolute; top: 0; bottom: 0; left: 50%;
+  width: 0; background: var(--accent); border-radius: 4px;
+  transform: translateX(0);
+}
+.view-hint {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; padding: 20px;
+  font-size: 0.9rem; color: var(--muted);
+  background: rgba(5,8,5,0.55); pointer-events: none;
+}
+.rec-dot {
+  position: absolute; top: 10px; right: 10px;
+  width: 12px; height: 12px; border-radius: 50%;
+  background: #ef4444; opacity: 0;
+  box-shadow: 0 0 10px rgba(239,68,68,0.8);
+}
+.rec-dot.live { opacity: 1; animation: blink 1s steps(2, start) infinite; }
+@keyframes blink { 50% { opacity: 0.25; } }
+
+/* ---- 버튼 ---- */
+.btn-row { display: flex; gap: 8px; margin-top: 12px; }
+.ctl-btn {
+  flex: 1 1 0; min-width: 0;
+  background: var(--bg-soft); color: var(--text);
+  border: 1px solid var(--card-line); border-radius: 10px;
+  padding: 12px 10px; font-size: 0.92rem; font-weight: 700; cursor: pointer;
+}
+.ctl-btn:active { background: #0a0f0a; }
+.ctl-btn.primary { border-color: var(--accent); color: var(--accent); }
+.ctl-btn.primary.rec { background: var(--accent); color: #0a0f0a; }
+.ctl-btn:disabled { opacity: 0.45; cursor: default; }
+.track-tip { margin: 10px 2px 0; font-size: 0.78rem; color: var(--muted); }
+
+/* ---- 측정값 ---- */
+.readouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+.card { background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 10px 6px; text-align: center; }
+.card.highlight { border-color: var(--accent-2); background: linear-gradient(180deg, rgba(245,158,11,0.12), var(--card)); }
+.card-label { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+.card-value { font-size: 0.95rem; }
+.card-value b { font-size: 1.18rem; color: var(--accent); }
+.card.highlight .card-value b { color: var(--accent-2); }
+
+/* ---- 옵션 ---- */
+.controls { margin-top: 16px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 14px; }
+.opt-row { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text); cursor: pointer; }
+.opt-row input { width: 18px; height: 18px; accent-color: var(--accent); }
+.scale-note { margin: 12px 0 0; font-size: 0.76rem; color: var(--muted); line-height: 1.5; }
+
+/* ---- 그래프 ---- */
+.graph-section { margin-top: 18px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 14px; }
+.graph-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+.graph-head h2 { margin: 0; font-size: 1rem; }
+.legend { font-size: 0.7rem; color: var(--accent-2); }
+#graph { width: 100%; height: 200px; display: block; }
+
+/* ---- 설명 ---- */
+.explain { margin-top: 18px; line-height: 1.6; font-size: 0.9rem; }
+.explain h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.explain p { margin: 0 0 10px; color: var(--text); }
+.formula {
+  text-align: center; font-size: 1.0rem; font-weight: 700;
+  color: var(--accent); background: var(--bg-soft);
+  border-radius: 10px; padding: 10px; letter-spacing: 0.02em;
+}
+.tip { font-size: 0.83rem; color: var(--muted) !important; }
+
+.app-footer { text-align: center; padding: 8px 16px calc(20px + var(--safe-bot)); font-size: 0.72rem; color: var(--muted); }
+
+/* 상위(실험 목록) 페이지로 돌아가는 링크 */
+.home-link {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+  background: var(--bg-soft);
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+.home-link:active { color: var(--text); }

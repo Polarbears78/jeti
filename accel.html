@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0a0f0a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>AR 가속도 측정 (카메라+센서)</title>
+<link rel="stylesheet" href="accel.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a class="home-link" href="index.html">← 실험 목록</a>
+    <h1>AR 가속도 측정</h1>
+    <p class="subtitle">카메라 화면 위에서 가속도 센서로 측정</p>
+  </header>
+
+  <main class="container">
+    <!-- 카메라 배경 + 센서 HUD -->
+    <section class="stage" aria-label="AR 측정 화면">
+      <div class="viewport">
+        <video id="video" playsinline muted autoplay></video>
+        <div class="hud">
+          <div class="hud-main">
+            <span class="hud-num" id="magHud">0.0</span>
+            <span class="hud-unit">m/s²</span>
+          </div>
+          <div class="hud-axes" aria-hidden="true">
+            <div class="axis"><span class="ax-name">X</span><span class="ax-bar"><i id="barX"></i></span></div>
+            <div class="axis"><span class="ax-name">Y</span><span class="ax-bar"><i id="barY"></i></span></div>
+            <div class="axis"><span class="ax-name">Z</span><span class="ax-bar"><i id="barZ"></i></span></div>
+          </div>
+        </div>
+        <div class="view-hint" id="viewHint">‘AR 시작’을 눌러 카메라·센서를 켜 주세요</div>
+        <span class="rec-dot" id="recDot" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <!-- 제어 버튼 -->
+    <section class="btn-row" aria-label="시작">
+      <button class="ctl-btn" id="startBtn" type="button">▶ AR 시작 (카메라+센서)</button>
+    </section>
+    <section class="btn-row" aria-label="측정">
+      <button class="ctl-btn primary" id="measureBtn" type="button" disabled>● 측정 시작</button>
+      <button class="ctl-btn" id="resetBtn" type="button">초기화</button>
+    </section>
+
+    <p class="track-tip" id="trackTip">💡 폰을 들고 움직이거나 흔들면 가속도가 실시간으로 측정됩니다.</p>
+
+    <!-- 측정값 카드 -->
+    <section class="readouts" aria-label="측정값">
+      <div class="card highlight">
+        <span class="card-label">가속도 |a|</span>
+        <span class="card-value"><b id="magVal">0.0</b> m/s²</span>
+      </div>
+      <div class="card">
+        <span class="card-label">최대 |a|</span>
+        <span class="card-value"><b id="maxVal">0.0</b> m/s²</span>
+      </div>
+      <div class="card">
+        <span class="card-label">측정 시간</span>
+        <span class="card-value"><b id="timeVal">0.0</b> s</span>
+      </div>
+    </section>
+
+    <!-- 옵션 -->
+    <section class="controls">
+      <label class="opt-row">
+        <input type="checkbox" id="gravityChk" />
+        <span>중력 포함해서 측정 (체크 해제 시 정지 상태 ≈ 0)</span>
+      </label>
+      <p class="scale-note" id="sensorNote">센서 상태: 대기 중</p>
+    </section>
+
+    <!-- a-t 그래프 -->
+    <section class="graph-section" aria-label="가속도-시간 그래프">
+      <div class="graph-head">
+        <h2>가속도–시간 그래프</h2>
+        <span class="legend">최근 6초 · |a|</span>
+      </div>
+      <canvas id="graph"></canvas>
+    </section>
+
+    <!-- 설명 -->
+    <section class="explain">
+      <h2>센서로 가속도 측정하기</h2>
+      <p>
+        스마트폰의 <b>가속도 센서</b>는 기기가 받는 가속도를 X·Y·Z 세 방향으로 측정합니다.
+        세 성분을 합치면 가속도의 <b>크기 |a|</b>를 얻고, 카메라 화면 위에 겹쳐
+        <b>증강현실(AR)</b>처럼 보여 줍니다.
+      </p>
+      <p class="formula">|a| = √(aₓ² + a_y² + a_z²)</p>
+      <p class="tip">💡 정지해 있으면 가속도 크기는 0에 가깝고(중력 제외 모드), 폰을 빠르게
+        움직이거나 멈출 때 값이 커집니다. ‘중력 포함’을 켜면 가만히 있어도
+        중력가속도 <b>9.8 m/s²</b>가 측정됩니다. ‘측정 시작’ 후 동작을 하면 최대 가속도와
+        가속도–시간 그래프를 확인할 수 있어요.</p>
+      <p class="tip">📱 iOS는 ‘AR 시작’을 누를 때 동작 센서 권한을 한 번 허용해야 합니다.
+        센서가 없는 기기(PC 등)에서는 자동으로 데모 신호로 측정 과정을 보여 줍니다.
+        카메라/센서 모두 HTTPS 접속이 필요합니다(GitHub Pages는 충족).</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>중학교 과학 · AR 가속도 센서 측정</p>
+  </footer>
+
+  <script src="accel.js"></script>
+</body>
+</html>
