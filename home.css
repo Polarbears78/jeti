@@ -12,6 +12,7 @@
   --ion: #818cf8;
   --wave: #2dd4bf;
   --ohm: #f59e0b;
+  --resistance: #fb7185;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bot: env(safe-area-inset-bottom, 0px);
 }
@@ -89,6 +90,7 @@ html, body {
 .exp-card.ion { --theme: var(--ion); }
 .exp-card.wave { --theme: var(--wave); }
 .exp-card.ohm { --theme: var(--ohm); }
+.exp-card.resistance { --theme: var(--resistance); }
 .exp-card:active { border-color: var(--theme); }
 
 /* 홀수 개일 때 마지막 카드는 한 줄 전체 차지 */
