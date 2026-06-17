@@ -2,153 +2,114 @@
   "use strict";
 
   // ----- 개요 -----
-  // 카메라(또는 데모) 영상에서 단색 물체를 색으로 추적해 위치 → 속도 → 가속도를 구한다.
-  // 위치 y는 화면 위에서 아래로(낙하 방향) 양(+). 속도 v = Δy/Δt, 가속도 a = v-t 그래프 기울기.
-  const CW = 360, CH = 480;          // 처리 캔버스 해상도(3:4 고정)
-  const COLOR_TOL2 = 70 * 70;        // 색 일치 허용 거리(제곱)
-  const MIN_COUNT = 10;              // 물체로 인정할 최소 픽셀 수
-  const STEP = 3;                    // 픽셀 샘플 간격(성능)
-  const G = 9.8;                     // 데모 낙하 가속도
+  // 카메라 영상을 배경으로 깔고, 기기의 가속도 센서(DeviceMotion)로
+  // 가속도를 측정해 화면에 겹쳐 보여 준다(AR 느낌). |a| = √(ax²+ay²+az²).
+  // 센서가 없으면 데모 신호로 측정 과정을 시연한다.
+  const WINDOW = 6;          // 그래프 표시 구간(초)
+  const BAR_MAX = 15;        // 축 막대 스케일(m/s²)
 
   // ----- DOM -----
   const video = document.getElementById("video");
-  const view = document.getElementById("view");
-  const vctx = view.getContext("2d", { willReadFrequently: true });
   const viewHint = document.getElementById("viewHint");
   const recDot = document.getElementById("recDot");
-  const camBtn = document.getElementById("camBtn");
-  const demoBtn = document.getElementById("demoBtn");
+  const startBtn = document.getElementById("startBtn");
   const measureBtn = document.getElementById("measureBtn");
   const resetBtn = document.getElementById("resetBtn");
-  const scaleInput = document.getElementById("scaleInput");
+  const gravityChk = document.getElementById("gravityChk");
+  const sensorNote = document.getElementById("sensorNote");
   const trackTip = document.getElementById("trackTip");
-  const posVal = document.getElementById("posVal");
-  const velVal = document.getElementById("velVal");
-  const accVal = document.getElementById("accVal");
-
-  view.width = CW; view.height = CH;
+  const magHud = document.getElementById("magHud");
+  const magVal = document.getElementById("magVal");
+  const maxVal = document.getElementById("maxVal");
+  const timeVal = document.getElementById("timeVal");
+  const barX = document.getElementById("barX");
+  const barY = document.getElementById("barY");
+  const barZ = document.getElementById("barZ");
 
   // ----- 상태 -----
-  let mode = "idle";          // idle | camera | demo
   let stream = null;
-  let target = null;          // 추적 색 {r,g,b}
+  let started = false;
   let measuring = false;
-  let t0 = 0;                 // 측정 시작 시각
-  let demoT0 = 0;             // 데모 낙하 시작 시각
-  let demoLanded = false;     // 데모 공이 바닥에 닿음
-  const trail = [];           // 화면 표시용 궤적(px)
-  const samples = [];         // 측정 데이터 [{t, y}]
-  let emaY = null;            // 위치 평활값(m)
-  let lastY = null, lastT = null, vNow = 0, aNow = 0;
+  let demoActive = false;
+  let sensorGot = false;
+  let t0 = 0, maxMag = 0;
 
-  function scaleM() {
-    const v = parseFloat(scaleInput.value);
-    return (isFinite(v) && v > 0) ? v : 4.0;
-  }
-  function metersPerPx() { return scaleM() / CH; }
+  // 가속도 성분 (incl: 중력 포함 / lin: 중력 제외)
+  let gx = 0, gy = 0, gz = 0;          // 중력 포함
+  let lx = 0, ly = 0, lz = 0;          // 중력 제외
+  const gravLP = { x: 0, y: 0, z: 9.8 }; // 중력 저역통과 추정
 
-  // ----- 소스 렌더링 -----
-  function drawCover(img, iw, ih) {
-    const s = Math.max(CW / iw, CH / ih);
-    const w = iw * s, h = ih * s;
-    vctx.drawImage(img, (CW - w) / 2, (CH - h) / 2, w, h);
-  }
+  const samples = [];   // {t(초), mag} 링버퍼
 
-  function drawDemo(now) {
-    // 배경
-    const g = vctx.createLinearGradient(0, 0, 0, CH);
-    g.addColorStop(0, "#0b1411"); g.addColorStop(1, "#06100c");
-    vctx.fillStyle = g; vctx.fillRect(0, 0, CW, CH);
-    // 바닥 눈금(시각 참고)
-    vctx.strokeStyle = "rgba(74,222,128,0.10)"; vctx.lineWidth = 1;
-    for (let i = 1; i < 8; i++) {
-      const y = (CH * i) / 8;
-      vctx.beginPath(); vctx.moveTo(0, y); vctx.lineTo(CW, y); vctx.stroke();
+  // ----- 센서 -----
+  function onMotion(e) {
+    const a = e.accelerationIncludingGravity;
+    if (!a || (a.x == null && a.y == null && a.z == null)) return;
+    gx = a.x || 0; gy = a.y || 0; gz = a.z || 0;
+    gravLP.x = gravLP.x * 0.9 + gx * 0.1;
+    gravLP.y = gravLP.y * 0.9 + gy * 0.1;
+    gravLP.z = gravLP.z * 0.9 + gz * 0.1;
+    lx = gx - gravLP.x; ly = gy - gravLP.y; lz = gz - gravLP.z;
+    if (!sensorGot) {
+      sensorGot = true; demoActive = false;
+      sensorNote.textContent = "센서 상태: 가속도 센서 측정 중 ✅";
     }
-    // 자유낙하 공: y(m) = 0.5 g t^2 → px
-    let t = (now - demoT0) / 1000;
-    const mpp = metersPerPx();
-    let yM = 0.5 * G * t * t;
-    const maxYm = (CH - 20) * mpp;
-    demoLanded = false;
-    if (yM >= maxYm) {
-      // 측정 중에는 바닥에서 멈춤(깨끗한 1회 낙하), 평소엔 반복 낙하
-      if (measuring) { yM = maxYm; demoLanded = true; }
-      else { demoT0 = now; yM = 0; }
-    }
-    const cy = 20 + yM / mpp;
-    const cx = CW / 2;
-    vctx.beginPath();
-    vctx.arc(cx, cy, 16, 0, Math.PI * 2);
-    vctx.fillStyle = "#ef4444"; vctx.fill();
   }
 
-  // ----- 색 추적 -----
-  function track() {
-    if (!target) return null;
-    let data;
-    try { data = vctx.getImageData(0, 0, CW, CH).data; }
-    catch (e) { return null; }
-    let sx = 0, sy = 0, n = 0;
-    const tr = target.r, tg = target.g, tb = target.b;
-    for (let y = 0; y < CH; y += STEP) {
-      for (let x = 0; x < CW; x += STEP) {
-        const i = (y * CW + x) * 4;
-        const dr = data[i] - tr, dg = data[i + 1] - tg, db = data[i + 2] - tb;
-        if (dr * dr + dg * dg + db * db < COLOR_TOL2) { sx += x; sy += y; n++; }
+  async function enableMotion() {
+    const DME = window.DeviceMotionEvent;
+    if (typeof DME !== "undefined" && typeof DME.requestPermission === "function") {
+      // iOS 13+ : 사용자 제스처에서 권한 요청
+      const res = await DME.requestPermission();
+      if (res !== "granted") throw new Error("동작 센서 권한이 거부되었습니다.");
+    }
+    if (typeof DME === "undefined") throw new Error("이 기기는 동작 센서를 지원하지 않습니다.");
+    window.addEventListener("devicemotion", onMotion);
+    // 일정 시간 내 신호가 없으면 데모로 전환(PC 등)
+    setTimeout(function () {
+      if (!sensorGot) {
+        demoActive = true;
+        sensorNote.textContent = "센서 상태: 신호 없음 → 데모 신호로 측정 시연 중";
       }
-    }
-    if (n < MIN_COUNT) return null;
-    return { x: sx / n, y: sy / n, n: n };
+    }, 1200);
   }
 
-  function drawOverlay(c) {
-    // 궤적
-    if (trail.length > 1) {
-      vctx.beginPath();
-      vctx.moveTo(trail[0].x, trail[0].y);
-      for (let i = 1; i < trail.length; i++) vctx.lineTo(trail[i].x, trail[i].y);
-      vctx.strokeStyle = "rgba(74,222,128,0.7)"; vctx.lineWidth = 2; vctx.stroke();
-    }
-    if (c) {
-      vctx.beginPath();
-      vctx.arc(c.x, c.y, 14, 0, Math.PI * 2);
-      vctx.strokeStyle = "#4ade80"; vctx.lineWidth = 3; vctx.stroke();
-      vctx.beginPath();
-      vctx.arc(c.x, c.y, 2.5, 0, Math.PI * 2);
-      vctx.fillStyle = "#4ade80"; vctx.fill();
+  // ----- 카메라(배경) -----
+  async function startCamera() {
+    try {
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) return;
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: { ideal: "environment" } }, audio: false
+      });
+      video.srcObject = stream;
+      await video.play();
+    } catch (e) {
+      // 카메라 없거나 거부 → 어두운 배경 유지(센서 측정은 계속)
     }
   }
 
-  // ----- 선형회귀: 기울기(가속도) -----
-  function regressionSlope(ts, vs) {
-    const n = ts.length;
-    if (n < 2) return 0;
-    let st = 0, sv = 0;
-    for (let i = 0; i < n; i++) { st += ts[i]; sv += vs[i]; }
-    const mt = st / n, mv = sv / n;
-    let num = 0, den = 0;
-    for (let i = 0; i < n; i++) {
-      const dt = ts[i] - mt;
-      num += dt * (vs[i] - mv); den += dt * dt;
-    }
-    return den === 0 ? 0 : num / den;
+  function stopStream() {
+    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
   }
 
-  // 측정 데이터에서 속도열·가속도 계산
-  function computeKinematics() {
-    const ts = [], vs = [];
-    for (let i = 1; i < samples.length; i++) {
-      const dt = samples[i].t - samples[i - 1].t;
-      if (dt <= 0) continue;
-      vs.push((samples[i].y - samples[i - 1].y) / dt);
-      ts.push((samples[i].t + samples[i - 1].t) / 2);
-    }
-    const a = regressionSlope(ts, vs);
-    return { ts, vs, a };
+  // ----- 데모 신호 -----
+  function demoSignal(now) {
+    const t = now / 1000;
+    lx = 4 * Math.sin(t * 2.0) + 1.2 * Math.sin(t * 7.0);
+    ly = 3 * Math.sin(t * 3.0 + 1) ;
+    lz = 2 * Math.sin(t * 5.0);
+    gx = lx; gy = ly; gz = lz + 9.8;
   }
 
-  // ----- v-t 그래프 -----
+  // ----- 축 막대 -----
+  function updateBar(el, v) {
+    const frac = Math.max(-1, Math.min(1, v / BAR_MAX));
+    const w = Math.abs(frac) * 50;
+    el.style.width = w + "%";
+    el.style.left = (frac >= 0 ? 50 : 50 - w) + "%";
+  }
+
+  // ----- 그래프 -----
   const gCanvas = document.getElementById("graph");
   const gctx = gCanvas.getContext("2d");
   let dpr = Math.min(window.devicePixelRatio || 1, 2);
@@ -158,167 +119,107 @@
     gCanvas.width = w * dpr; gCanvas.height = h * dpr;
   }
 
-  function drawGraph() {
+  function drawGraph(nowSec) {
     const w = gCanvas.width, h = gCanvas.height;
     if (w === 0 || h === 0) return;
     gctx.clearRect(0, 0, w, h);
-    const padL = 42 * dpr, padB = 26 * dpr, padT = 12 * dpr, padR = 12 * dpr;
+    const padL = 40 * dpr, padB = 24 * dpr, padT = 12 * dpr, padR = 12 * dpr;
     const plotW = w - padL - padR, plotH = h - padT - padB;
 
-    const k = computeKinematics();
-    const ts = k.ts, vs = k.vs;
+    const tEnd = nowSec, tStart = tEnd - WINDOW;
+    let yMax = 12;
+    for (const s of samples) if (s.t >= tStart && s.mag > yMax) yMax = s.mag;
+    yMax = Math.ceil(yMax / 4) * 4;
 
-    // 범위
-    let tMax = 1, vMin = 0, vMax = 1;
-    if (ts.length) {
-      tMax = Math.max(1, ts[ts.length - 1]);
-      vMin = Math.min(0, ...vs); vMax = Math.max(1, ...vs);
-      const pad = (vMax - vMin) * 0.1 || 0.5;
-      vMin -= pad; vMax += pad;
-    }
-    const xOf = t => padL + (t / tMax) * plotW;
-    const yOf = v => padT + (1 - (v - vMin) / (vMax - vMin)) * plotH;
+    const xOf = t => padL + ((t - tStart) / WINDOW) * plotW;
+    const yOf = m => padT + (1 - m / yMax) * plotH;
 
     // 격자 + 축
     gctx.strokeStyle = "rgba(143,197,156,0.16)"; gctx.lineWidth = 1 * dpr;
     gctx.beginPath();
     for (let i = 0; i <= 4; i++) { const gy = padT + (plotH * i) / 4; gctx.moveTo(padL, gy); gctx.lineTo(w - padR, gy); }
-    for (let i = 0; i <= 4; i++) { const gx = padL + (plotW * i) / 4; gctx.moveTo(gx, padT); gctx.lineTo(gx, h - padB); }
     gctx.stroke();
     gctx.strokeStyle = "rgba(143,197,156,0.7)"; gctx.lineWidth = 1.5 * dpr;
     gctx.beginPath();
     gctx.moveTo(padL, padT); gctx.lineTo(padL, h - padB); gctx.lineTo(w - padR, h - padB);
     gctx.stroke();
 
-    // 회귀 직선
-    if (ts.length >= 2) {
-      const a = k.a;
-      // 평균점을 지나는 직선 v = a(t - mt) + mv
-      let st = 0, sv = 0; for (let i = 0; i < ts.length; i++) { st += ts[i]; sv += vs[i]; }
-      const mt = st / ts.length, mv = sv / ts.length;
-      const vAt = t => a * (t - mt) + mv;
-      gctx.strokeStyle = "#f59e0b"; gctx.lineWidth = 2.5 * dpr;
-      gctx.beginPath();
-      gctx.moveTo(xOf(0), yOf(vAt(0)));
-      gctx.lineTo(xOf(tMax), yOf(vAt(tMax)));
-      gctx.stroke();
+    // |a| 트레이스
+    gctx.strokeStyle = "#4ade80"; gctx.lineWidth = 2 * dpr;
+    gctx.beginPath();
+    let first = true;
+    for (const s of samples) {
+      if (s.t < tStart) continue;
+      const x = xOf(s.t), y = yOf(Math.min(s.mag, yMax));
+      if (first) { gctx.moveTo(x, y); first = false; } else gctx.lineTo(x, y);
     }
+    gctx.stroke();
 
-    // 측정점
-    gctx.fillStyle = "#4ade80";
-    for (let i = 0; i < ts.length; i++) {
-      gctx.beginPath();
-      gctx.arc(xOf(ts[i]), yOf(vs[i]), 3 * dpr, 0, Math.PI * 2);
-      gctx.fill();
+    // 최대값 점선
+    if (maxMag > 0) {
+      const ym = yOf(Math.min(maxMag, yMax));
+      gctx.strokeStyle = "rgba(245,158,11,0.7)";
+      gctx.setLineDash([4 * dpr, 4 * dpr]); gctx.lineWidth = 1.5 * dpr;
+      gctx.beginPath(); gctx.moveTo(padL, ym); gctx.lineTo(w - padR, ym); gctx.stroke();
+      gctx.setLineDash([]);
     }
 
     // 라벨
     gctx.fillStyle = "rgba(143,197,156,0.95)";
     gctx.font = `${11 * dpr}px sans-serif`;
-    gctx.textAlign = "center";
-    gctx.fillText("시간 t (s)", padL + plotW / 2, h - 5 * dpr);
-    gctx.save();
-    gctx.translate(12 * dpr, padT + plotH / 2);
-    gctx.rotate(-Math.PI / 2);
-    gctx.fillText("속도 v (m/s)", 0, 0);
-    gctx.restore();
+    gctx.textAlign = "left"; gctx.fillText(yMax + " m/s²", padL + 4 * dpr, padT + 12 * dpr);
+    gctx.textAlign = "center"; gctx.fillText("시간 (최근 6초)", padL + plotW / 2, h - 5 * dpr);
   }
 
   // ----- 메인 루프 -----
   function tick(now) {
-    if (mode === "camera" && video.readyState >= 2) {
-      drawCover(video, video.videoWidth || CW, video.videoHeight || CH);
-    } else if (mode === "demo") {
-      drawDemo(now);
-    }
+    if (started) {
+      if (demoActive) demoSignal(now);
+      const useGrav = gravityChk.checked;
+      const ax = useGrav ? gx : lx, ay = useGrav ? gy : ly, az = useGrav ? gz : lz;
+      const mag = Math.sqrt(ax * ax + ay * ay + az * az);
 
-    if (mode !== "idle") {
-      const c = track();
-      if (c) {
-        trail.push({ x: c.x, y: c.y });
-        if (trail.length > 60) trail.shift();
-        const mpp = metersPerPx();
-        const yM = c.y * mpp;              // 위에서 아래로 양(+)
-        emaY = emaY == null ? yM : emaY * 0.6 + yM * 0.4;
-        if (lastT != null) {
-          const dt = (now - lastT) / 1000;
-          if (dt > 0) vNow = (emaY - lastY) / dt;
-        }
-        lastY = emaY; lastT = now;
-        posVal.textContent = yM.toFixed(2);
-        velVal.textContent = vNow.toFixed(2);
+      magHud.textContent = mag.toFixed(1);
+      magVal.textContent = mag.toFixed(1);
+      updateBar(barX, ax); updateBar(barY, ay); updateBar(barZ, az);
 
-        if (measuring) {
-          samples.push({ t: (now - t0) / 1000, y: yM });
-          if (samples.length > 600) samples.shift();
-          const k = computeKinematics();
-          aNow = k.a;
-          accVal.textContent = aNow.toFixed(1);
-        }
+      const nowSec = now / 1000;
+      samples.push({ t: nowSec, mag: mag });
+      while (samples.length && samples[0].t < nowSec - WINDOW - 1) samples.shift();
+
+      if (measuring) {
+        if (mag > maxMag) { maxMag = mag; maxVal.textContent = maxMag.toFixed(1); }
+        timeVal.textContent = ((now - t0) / 1000).toFixed(1);
       }
-      drawOverlay(c);
+      drawGraph(nowSec);
     }
-
-    if (measuring) drawGraph();
-    // 데모: 한 번의 낙하가 끝나면 자동으로 측정 정지
-    if (measuring && mode === "demo" && demoLanded) toggleMeasure();
     requestAnimationFrame(tick);
   }
 
-  // ----- 카메라 -----
-  async function startCamera() {
+  // ----- 제어 -----
+  async function startAR() {
+    startBtn.disabled = true;
+    startBtn.textContent = "준비 중…";
+    await startCamera();
     try {
-      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-        throw new Error("이 브라우저는 카메라 접근을 지원하지 않습니다.");
-      }
-      stopStream();
-      stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: { ideal: "environment" } }, audio: false
-      });
-      video.srcObject = stream;
-      await video.play();
-      mode = "camera";
-      target = null;
-      viewHint.style.display = "none";
-      measureBtn.disabled = false;
-      trackTip.textContent = "💡 추적할 물체를 화면에서 한 번 탭하면 그 색을 따라갑니다.";
-    } catch (err) {
-      viewHint.style.display = "flex";
-      viewHint.textContent = "카메라를 열 수 없습니다: " + (err && err.message ? err.message : err) +
-        " — ‘데모(가상 공)’로 체험해 보세요.";
+      await enableMotion();
+    } catch (e) {
+      demoActive = true;
+      sensorNote.textContent = "센서 상태: " + (e.message || e) + " → 데모 신호로 시연";
     }
-  }
-
-  function stopStream() {
-    if (stream) { stream.getTracks().forEach(t => t.stop()); stream = null; }
-  }
-
-  // ----- 데모 -----
-  function startDemo() {
-    stopStream();
-    mode = "demo";
-    demoT0 = performance.now();
-    target = { r: 239, g: 68, b: 68 }; // 빨간 공 자동 추적
+    started = true;
     viewHint.style.display = "none";
     measureBtn.disabled = false;
-    trackTip.textContent = "🧪 데모: 빨간 공이 자유낙하합니다. ‘측정 시작’을 누르면 가속도(≈9.8)를 분석해요.";
+    startBtn.textContent = "✔ 실행 중";
+    if (!sensorGot && !demoActive) sensorNote.textContent = "센서 상태: 신호 대기 중…";
   }
 
-  // ----- 측정 토글 -----
   function toggleMeasure() {
-    if (mode === "idle") return;
+    if (!started) return;
     measuring = !measuring;
     if (measuring) {
-      if (!target) {
-        trackTip.textContent = "⚠️ 먼저 추적할 물체를 화면에서 탭해 색을 지정하세요.";
-        measuring = false;
-        return;
-      }
-      samples.length = 0;
-      trail.length = 0;
-      emaY = lastY = lastT = null;
+      maxMag = 0; maxVal.textContent = "0.0";
       t0 = performance.now();
-      if (mode === "demo") { demoT0 = t0; demoLanded = false; } // 측정과 함께 새 낙하 시작
       measureBtn.textContent = "■ 측정 정지";
       measureBtn.classList.add("rec");
       recDot.classList.add("live");
@@ -326,49 +227,31 @@
       measureBtn.textContent = "● 측정 시작";
       measureBtn.classList.remove("rec");
       recDot.classList.remove("live");
-      drawGraph();
     }
   }
 
   function resetAll() {
     measuring = false;
-    samples.length = 0; trail.length = 0;
-    emaY = lastY = lastT = null; vNow = aNow = 0;
+    maxMag = 0; samples.length = 0;
     measureBtn.textContent = "● 측정 시작";
     measureBtn.classList.remove("rec");
     recDot.classList.remove("live");
-    posVal.textContent = "0.00"; velVal.textContent = "0.00"; accVal.textContent = "0.0";
-    drawGraph();
+    maxVal.textContent = "0.0"; timeVal.textContent = "0.0";
+    drawGraph(performance.now() / 1000);
   }
 
-  // 화면 탭 → 색 지정
-  view.addEventListener("pointerdown", function (e) {
-    if (mode === "idle") return;
-    const rect = view.getBoundingClientRect();
-    const x = Math.round((e.clientX - rect.left) / rect.width * CW);
-    const y = Math.round((e.clientY - rect.top) / rect.height * CH);
-    try {
-      const d = vctx.getImageData(Math.max(0, Math.min(CW - 1, x)), Math.max(0, Math.min(CH - 1, y)), 1, 1).data;
-      target = { r: d[0], g: d[1], b: d[2] };
-      trail.length = 0;
-      trackTip.textContent = `🎯 지정한 색 RGB(${d[0]}, ${d[1]}, ${d[2]})을(를) 추적합니다.`;
-    } catch (err) {}
-  });
-
-  camBtn.addEventListener("click", startCamera);
-  demoBtn.addEventListener("click", startDemo);
+  startBtn.addEventListener("click", startAR);
   measureBtn.addEventListener("click", toggleMeasure);
   resetBtn.addEventListener("click", resetAll);
-  scaleInput.addEventListener("change", function () { if (measuring) drawGraph(); });
 
   document.addEventListener("visibilitychange", function () {
-    if (document.hidden) { measuring = false; recDot.classList.remove("live"); }
+    if (document.hidden && measuring) toggleMeasure();
   });
   window.addEventListener("pagehide", stopStream);
 
   function onResize() {
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    sizeGraph(); drawGraph();
+    sizeGraph(); drawGraph(performance.now() / 1000);
   }
   window.addEventListener("resize", onResize);
   window.addEventListener("orientationchange", function () { setTimeout(onResize, 200); });

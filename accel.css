@@ -33,23 +33,49 @@ html, body {
   padding: 8px 16px calc(24px + var(--safe-bot));
 }
 
-/* ---- 카메라/추적 화면 ---- */
+/* ---- 카메라 배경 + HUD ---- */
 .stage { display: flex; justify-content: center; padding: 10px 0 4px; }
 .viewport {
   position: relative; width: 100%;
   aspect-ratio: 3 / 4; max-height: 60vh;
   border: 1px solid var(--card-line); border-radius: 14px;
-  overflow: hidden; background: #05080500;
+  overflow: hidden; background: #050805;
+}
+#video {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%; object-fit: cover;
   background: #050805;
 }
-#video { display: none; }
-#view { width: 100%; height: 100%; display: block; object-fit: cover; }
+.hud {
+  position: absolute; inset: 0;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 18px; pointer-events: none;
+  text-shadow: 0 2px 12px rgba(0,0,0,0.8);
+}
+.hud-main { display: flex; align-items: baseline; gap: 6px; }
+.hud-num {
+  font-size: 3.4rem; font-weight: 800; line-height: 1;
+  color: var(--accent);
+}
+.hud-unit { font-size: 1rem; color: var(--accent); font-weight: 700; }
+.hud-axes { display: flex; flex-direction: column; gap: 6px; width: 70%; max-width: 240px; }
+.axis { display: flex; align-items: center; gap: 8px; }
+.ax-name { width: 14px; font-size: 0.78rem; font-weight: 800; color: #e9f7ec; }
+.ax-bar {
+  position: relative; flex: 1; height: 8px; border-radius: 4px;
+  background: rgba(255,255,255,0.18); overflow: hidden;
+}
+.ax-bar i {
+  position: absolute; top: 0; bottom: 0; left: 50%;
+  width: 0; background: var(--accent); border-radius: 4px;
+  transform: translateX(0);
+}
 .view-hint {
   position: absolute; inset: 0;
   display: flex; align-items: center; justify-content: center;
   text-align: center; padding: 20px;
   font-size: 0.9rem; color: var(--muted);
-  pointer-events: none;
+  background: rgba(5,8,5,0.55); pointer-events: none;
 }
 .rec-dot {
   position: absolute; top: 10px; right: 10px;
@@ -66,7 +92,7 @@ html, body {
   flex: 1 1 0; min-width: 0;
   background: var(--bg-soft); color: var(--text);
   border: 1px solid var(--card-line); border-radius: 10px;
-  padding: 11px 10px; font-size: 0.9rem; font-weight: 700; cursor: pointer;
+  padding: 12px 10px; font-size: 0.92rem; font-weight: 700; cursor: pointer;
 }
 .ctl-btn:active { background: #0a0f0a; }
 .ctl-btn.primary { border-color: var(--accent); color: var(--accent); }
@@ -83,17 +109,11 @@ html, body {
 .card-value b { font-size: 1.18rem; color: var(--accent); }
 .card.highlight .card-value b { color: var(--accent-2); }
 
-/* ---- 스케일 보정 ---- */
+/* ---- 옵션 ---- */
 .controls { margin-top: 16px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 14px; }
-.scale-row { display: flex; flex-direction: column; gap: 10px; font-size: 0.85rem; color: var(--muted); }
-.scale-input { display: flex; align-items: center; gap: 8px; }
-.scale-input input {
-  width: 110px; background: var(--bg-soft); color: var(--text);
-  border: 1px solid var(--card-line); border-radius: 8px;
-  padding: 8px 10px; font-size: 1rem; text-align: center;
-}
-.scale-input .unit { color: var(--muted); font-weight: 700; }
-.scale-note { margin: 10px 0 0; font-size: 0.74rem; color: var(--muted); line-height: 1.5; }
+.opt-row { display: flex; align-items: center; gap: 10px; font-size: 0.85rem; color: var(--text); cursor: pointer; }
+.opt-row input { width: 18px; height: 18px; accent-color: var(--accent); }
+.scale-note { margin: 12px 0 0; font-size: 0.76rem; color: var(--muted); line-height: 1.5; }
 
 /* ---- 그래프 ---- */
 .graph-section { margin-top: 18px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 14px; }
