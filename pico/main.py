@@ -63,6 +63,14 @@ class TempSensor:
 # ---------- WiFi 접속 ----------
 def connect_wifi():
     wlan = network.WLAN(network.STA_IF)
+    # 보드 이름 설정 → http://<HOSTNAME>.local 로 접속 가능(mDNS 지원 기기)
+    try:
+        network.hostname(config.HOSTNAME)
+    except Exception:
+        try:
+            wlan.config(hostname=config.HOSTNAME)
+        except Exception:
+            pass
     wlan.active(True)
     if not wlan.isconnected():
         print("WiFi 접속 중:", config.WIFI_SSID)
@@ -73,7 +81,9 @@ def connect_wifi():
             time.sleep(0.5)
     if wlan.isconnected():
         ip = wlan.ifconfig()[0]
-        print("WiFi 연결 완료! 브라우저에서 접속:  http://%s" % ip)
+        print("WiFi 연결 완료! 브라우저에서 접속:")
+        print("   http://%s" % ip)
+        print("   http://%s.local  (mDNS 지원 기기)" % config.HOSTNAME)
         return ip
     print("WiFi 연결 실패. config.py의 SSID/비밀번호를 확인하세요.")
     return None
