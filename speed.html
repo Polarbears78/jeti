@@ -87,6 +87,41 @@
       <p class="scale-note" id="scaleNote">현재 환산: 기본값(화면 가로 ≈ 1 m)</p>
     </section>
 
+    <!-- 다중 섬광 사진 + 구간 분석 -->
+    <section class="photo-section" aria-label="다중 섬광 사진 분석">
+      <div class="graph-head">
+        <h2>📸 다중 섬광 사진</h2>
+        <label class="strobe-opt">섬광 간격
+          <select id="strobeSel">
+            <option value="0.1">0.1초</option>
+            <option value="0.25" selected>0.25초</option>
+            <option value="0.5">0.5초</option>
+            <option value="1">1초</option>
+          </select>
+        </label>
+      </div>
+      <div class="photo-wrap">
+        <canvas id="photo"></canvas>
+        <div class="photo-hint" id="photoHint">측정을 시작하면 섬광 간격마다 물체의 모습이<br />배경 위에 겹쳐 찍힙니다</div>
+      </div>
+      <div class="btn-row">
+        <button class="ctl-btn" id="saveBtn" type="button" disabled>💾 사진 저장</button>
+      </div>
+      <div class="table-wrap">
+        <table class="interval-table">
+          <thead>
+            <tr><th>구간</th><th>시간 (s)</th><th>거리 (cm)</th><th>속력 (m/s)</th></tr>
+          </thead>
+          <tbody id="intervalRows">
+            <tr><td colspan="4" class="empty-row">측정하면 구간별 분석이 표시됩니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tip">💡 실제 다중 섬광 사진처럼 <b>같은 시간 간격</b>마다 물체가 찍힙니다.
+        물체 사이 <b>간격이 넓으면 빠르고, 좁으면 느린</b> 것입니다. 표에서 구간별
+        거리·속력을 비교해 보세요.</p>
+    </section>
+
     <!-- v-t 그래프 -->
     <section class="graph-section" aria-label="속력-시간 그래프">
       <div class="graph-head">

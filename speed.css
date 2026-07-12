@@ -121,6 +121,35 @@ html, body {
 }
 .scale-note { margin: 8px 0; font-size: 0.76rem; color: var(--muted); line-height: 1.5; }
 
+/* ---- 다중 섬광 사진 ---- */
+.photo-section { margin-top: 18px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 14px; }
+.strobe-opt { font-size: 0.78rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+.strobe-opt select {
+  background: var(--bg); color: var(--accent);
+  border: 1px solid var(--card-line); border-radius: 8px;
+  padding: 6px 8px; font-size: 0.85rem; font-weight: 700;
+}
+.photo-wrap { position: relative; border-radius: 10px; overflow: hidden; background: #030608; }
+#photo { display: block; width: 100%; }
+.photo-hint {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  text-align: center; font-size: 0.82rem; color: var(--muted);
+  line-height: 1.6; pointer-events: none;
+}
+.table-wrap { margin-top: 10px; max-height: 220px; overflow-y: auto; border: 1px solid var(--card-line); border-radius: 10px; }
+.interval-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.interval-table th, .interval-table td { padding: 7px 6px; text-align: center; }
+.interval-table thead th {
+  position: sticky; top: 0;
+  background: var(--bg-soft); color: var(--muted);
+  font-size: 0.72rem; font-weight: 700;
+  border-bottom: 1px solid var(--card-line);
+}
+.interval-table tbody tr:nth-child(even) { background: rgba(34,211,238,0.05); }
+.interval-table td b { color: var(--accent); }
+.empty-row { color: var(--muted); font-size: 0.76rem; padding: 14px 6px !important; }
+
 /* ---- 그래프 ---- */
 .graph-section { margin-top: 18px; background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 14px; }
 .graph-head { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }

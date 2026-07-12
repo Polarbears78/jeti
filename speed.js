@@ -13,8 +13,9 @@
   const WINDOW = 8;           // 그래프 표시 구간(초)
   const V_DT = 0.22;          // 속력 계산에 쓰는 시간 간격(초)
   const DEFAULT_VIEW_M = 1.0; // 보정 전 가정: 화면 가로 = 1 m
-  const STROBE_DT = 0.25;     // 운동 기록(스트로보) 점 간격(초)
   const STROBE_MAX = 400;     // 운동 기록 최대 점 수
+  const SNAP_W = 480;         // 다중 섬광 사진 합성 해상도(폭)
+  let strobeDt = 0.25;        // 섬광(기록) 간격(초) — 선택 가능
 
   // ----- DOM -----
   const video = document.getElementById("video");
@@ -38,6 +39,12 @@
   const aVal = document.getElementById("aVal");
   const distVal = document.getElementById("distVal");
   const timeVal = document.getElementById("timeVal");
+  const photoCanvas = document.getElementById("photo");
+  const photoCtx = photoCanvas.getContext("2d");
+  const photoHint = document.getElementById("photoHint");
+  const strobeSel = document.getElementById("strobeSel");
+  const saveBtn = document.getElementById("saveBtn");
+  const intervalRows = document.getElementById("intervalRows");
 
   // ----- 처리용 캔버스 -----
   const proc = document.createElement("canvas");
@@ -68,8 +75,17 @@
   const vSamples = [];        // {t, v} 그래프용
 
   // 운동 기록(다중 섬광 사진처럼 일정 시간 간격의 위치 점)
-  const strobe = [];          // {x, y(proc px), label(초 눈금 문자열|null)}
+  const strobe = [];          // {x, y(proc px), el(초), label(초 눈금|null)}
   let travelDist = 0;         // 측정 중 총 이동 거리(m)
+
+  // 다중 섬광 사진 합성: 배경 스냅샷 위에 물체 모습을 섬광 간격마다 겹쳐 찍는다
+  const snap = document.createElement("canvas");       // 현재 프레임(중간 해상도)
+  const sctx = snap.getContext("2d");
+  const resultBase = document.createElement("canvas"); // 합성 결과(배경+물체들)
+  const rctx = resultBase.getContext("2d");
+  let snapH = 640;
+  let photoActive = false;
+  let intervalCount = 0;      // 구간 분석 표 행 번호
 
   // 기준자 보정(뷰포트 비율 좌표)
   let calibMode = false, calibSet = false;
@@ -85,6 +101,12 @@
     overlay.width = viewW * dpr; overlay.height = viewH * dpr;
     procH = Math.max(48, Math.round(PROC_W * viewH / viewW));
     proc.width = PROC_W; proc.height = procH;
+    snapH = Math.round(SNAP_W * viewH / viewW);
+    snap.width = SNAP_W; snap.height = snapH;
+    // 합성 결과는 진행 중 기록을 지키기 위해 크기가 실제로 달라질 때만 초기화
+    if (resultBase.width !== SNAP_W || resultBase.height !== snapH) {
+      resultBase.width = SNAP_W; resultBase.height = snapH;
+    }
     gray = null;
   }
 
@@ -151,6 +173,114 @@
       gray[j] = img[i] * 0.299 + img[i + 1] * 0.587 + img[i + 2] * 0.114;
     }
     return true;
+  }
+
+  // ----- 다중 섬광 사진 -----
+  function grabSnapFrame(nowSec) {
+    if (demoActive) {
+      drawDemoScene(sctx, SNAP_W, snapH, nowSec);
+      return true;
+    }
+    if (video.readyState < 2 || !video.videoWidth) return false;
+    const vw = video.videoWidth, vh = video.videoHeight;
+    const ar = viewW / viewH;
+    let sw = vw, sh = vh, sx = 0, sy = 0;
+    if (vw / vh > ar) { sw = vh * ar; sx = (vw - sw) / 2; }
+    else { sh = vw / ar; sy = (vh - sh) / 2; }
+    sctx.drawImage(video, sx, sy, sw, sh, 0, 0, SNAP_W, snapH);
+    return true;
+  }
+
+  // 측정 시작: 배경 한 장을 깔아 둔다
+  function beginPhoto(nowSec) {
+    if (grabSnapFrame(nowSec)) {
+      rctx.drawImage(snap, 0, 0);
+    } else {
+      rctx.fillStyle = "#101820";
+      rctx.fillRect(0, 0, SNAP_W, snapH);
+    }
+    photoActive = true;
+    photoHint.style.display = "none";
+    saveBtn.disabled = false;
+    intervalRows.innerHTML = "";
+    intervalCount = 0;
+    renderPhoto();
+  }
+
+  // 섬광: 현재 물체 모습을 배경 위에 겹쳐 찍는다
+  function stampPhoto(px, py, nowSec) {
+    if (!photoActive || !grabSnapFrame(nowSec)) return;
+    const sc = SNAP_W / PROC_W;
+    const r = TS * 0.65 * sc;
+    rctx.save();
+    rctx.beginPath();
+    rctx.arc(px * sc, py * sc, r, 0, Math.PI * 2);
+    rctx.clip();
+    rctx.drawImage(snap, 0, 0);
+    rctx.restore();
+  }
+
+  // 사진 위 표시(점·연결선·시간 눈금) — 저장 시에도 같은 함수 사용
+  function drawPhotoMarks(ctx, scale) {
+    if (strobe.length < 1) return;
+    ctx.strokeStyle = "rgba(250,204,21,0.45)";
+    ctx.lineWidth = 1.5 * scale / (SNAP_W / PROC_W);
+    ctx.beginPath();
+    const sc = scale;
+    ctx.moveTo(strobe[0].x * sc, strobe[0].y * sc);
+    for (let i = 1; i < strobe.length; i++) ctx.lineTo(strobe[i].x * sc, strobe[i].y * sc);
+    ctx.stroke();
+    ctx.font = "700 " + Math.round(4 * sc) + "px sans-serif";
+    ctx.textAlign = "center";
+    for (const p of strobe) {
+      ctx.fillStyle = p.label ? "#fde047" : "rgba(250,204,21,0.9)";
+      ctx.beginPath();
+      ctx.arc(p.x * sc, p.y * sc, (p.label ? 1.6 : 1) * sc, 0, Math.PI * 2);
+      ctx.fill();
+      if (p.label) {
+        ctx.fillStyle = "#fef9c3";
+        ctx.fillText(p.label, p.x * sc, p.y * sc - 2.6 * sc);
+      }
+    }
+  }
+
+  function renderPhoto() {
+    const cssW = photoCanvas.clientWidth || photoCanvas.parentElement.clientWidth;
+    if (!cssW) return;
+    const w = Math.round(cssW * dpr);
+    const h = Math.round(w * snapH / SNAP_W);
+    if (photoCanvas.width !== w || photoCanvas.height !== h) {
+      photoCanvas.width = w; photoCanvas.height = h;
+    }
+    photoCtx.clearRect(0, 0, w, h);
+    if (!photoActive) return;
+    photoCtx.drawImage(resultBase, 0, 0, w, h);
+    drawPhotoMarks(photoCtx, w / PROC_W);
+  }
+
+  function addIntervalRow(prev, cur, d, v) {
+    intervalCount++;
+    const row = "<tr><td>" + intervalCount + "</td>" +
+      "<td>" + prev.el.toFixed(2) + " → " + cur.el.toFixed(2) + "</td>" +
+      "<td>" + (d * 100).toFixed(1) + "</td>" +
+      "<td><b>" + v.toFixed(2) + "</b></td></tr>";
+    intervalRows.insertAdjacentHTML("beforeend", row);
+    // 스크롤을 최신 행으로
+    const wrap = intervalRows.closest(".table-wrap");
+    if (wrap) wrap.scrollTop = wrap.scrollHeight;
+  }
+
+  function savePhoto() {
+    if (!photoActive) return;
+    const tmp = document.createElement("canvas");
+    tmp.width = resultBase.width; tmp.height = resultBase.height;
+    const tctx = tmp.getContext("2d");
+    tctx.drawImage(resultBase, 0, 0);
+    drawPhotoMarks(tctx, SNAP_W / PROC_W);
+    const a = document.createElement("a");
+    a.href = tmp.toDataURL("image/png");
+    a.download = "다중섬광사진.png";
+    a.click();
   }
 
   // ----- 템플릿 매칭 추적 -----
@@ -438,15 +568,22 @@
         recTime.textContent = el.toFixed(1) + " s";
         timeVal.textContent = el.toFixed(1);
 
-        // 운동 기록: STROBE_DT 간격으로 위치 점 남기기
+        // 운동 기록: 섬광 간격마다 위치 점 + 물체 모습 + 구간 분석 기록
         const last = strobe[strobe.length - 1];
-        if (!last || el - last.el >= STROBE_DT) {
+        if (!last || el - last.el >= strobeDt) {
           const label = (!last || Math.floor(el) > Math.floor(last.el)) && el >= 1
             ? Math.floor(el) + "s" : null;
-          if (last) travelDist += Math.hypot(tx - last.x, ty - last.y) * metersPerProcPx();
-          strobe.push({ x: tx, y: ty, el: el, label: label });
+          const cur = { x: tx, y: ty, el: el, label: label };
+          if (last) {
+            const d = Math.hypot(tx - last.x, ty - last.y) * metersPerProcPx();
+            travelDist += d;
+            addIntervalRow(last, cur, d, d / (el - last.el));
+          }
+          strobe.push(cur);
           if (strobe.length > STROBE_MAX) strobe.shift();
           distVal.textContent = travelDist.toFixed(2);
+          stampPhoto(tx, ty, nowSec);
+          renderPhoto();
         }
       }
 
@@ -525,6 +662,7 @@
       vMaxVal.textContent = "0.00"; dvVal.textContent = "0.00"; aVal.textContent = "0.00";
       distVal.textContent = "0.00"; timeVal.textContent = "0.0";
       t0 = performance.now() / 1000;
+      beginPhoto(t0);
       measureBtn.textContent = "■ 측정 정지";
       measureBtn.classList.add("rec");
       recDot.classList.add("live");
@@ -559,6 +697,12 @@
     vVal.textContent = "0.00"; vMaxVal.textContent = "0.00";
     dvVal.textContent = "0.00"; aVal.textContent = "0.00";
     distVal.textContent = "0.00"; timeVal.textContent = "0.0";
+    photoActive = false; intervalCount = 0;
+    rctx.clearRect(0, 0, SNAP_W, snapH);
+    photoHint.style.display = "";
+    saveBtn.disabled = true;
+    intervalRows.innerHTML = "<tr><td colspan=\"4\" class=\"empty-row\">측정하면 구간별 분석이 표시됩니다</td></tr>";
+    renderPhoto();
     if (started) {
       trackTip.innerHTML = demoActive
         ? "📺 데모 화면입니다. 움직이는 공을 <b>탭</b>하면 바로 측정이 시작됩니다."
@@ -572,6 +716,10 @@
   calibBtn.addEventListener("click", toggleCalib);
   resetBtn.addEventListener("click", resetAll);
   calibLenInput.addEventListener("input", updateScaleNote);
+  strobeSel.addEventListener("change", function () {
+    strobeDt = parseFloat(strobeSel.value) || 0.25;
+  });
+  saveBtn.addEventListener("click", savePhoto);
 
   document.addEventListener("visibilitychange", function () {
     if (document.hidden && measuring) toggleMeasure();
@@ -589,6 +737,7 @@
     }
     updateScaleNote();
     drawGraph(performance.now() / 1000);
+    renderPhoto();
   }
   window.addEventListener("resize", onResize);
   window.addEventListener("orientationchange", function () { setTimeout(onResize, 200); });
