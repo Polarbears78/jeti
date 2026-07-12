@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0b1226" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>대기 측정소 — 기압·기온·습도</title>
+<link rel="stylesheet" href="weather.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a class="home-link" href="index.html">← 실험 목록</a>
+    <h1>대기 측정소</h1>
+    <p class="subtitle">내 위치의 실시간 기압 · 기온 · 습도</p>
+  </header>
+
+  <main class="container">
+    <!-- 상태 / 위치 -->
+    <section class="status-card" id="statusCard">
+      <div class="status-row">
+        <span class="loc-icon" aria-hidden="true">📍</span>
+        <div class="loc-text">
+          <b id="locName">위치 확인 중…</b>
+          <span class="loc-sub" id="obsTime">‘측정 시작’을 눌러 주세요</span>
+        </div>
+        <button class="measure-btn" id="measureBtn" type="button">측정 시작</button>
+      </div>
+      <p class="status-msg" id="statusMsg"></p>
+    </section>
+
+    <!-- 측정값 3종 -->
+    <section class="gauges" aria-label="측정값">
+      <!-- 기압 -->
+      <div class="gauge-card pressure">
+        <div class="gc-head">
+          <span class="gc-icon" aria-hidden="true">🧭</span>
+          <span class="gc-title">기압</span>
+        </div>
+        <div class="gc-value"><b id="presVal">--</b> <span class="gc-unit">hPa</span></div>
+        <div class="gc-bar"><div class="gc-fill" id="presFill"></div><span class="gc-mark" title="표준 기압 1013"></span></div>
+        <div class="gc-range"><span>950</span><span>표준 1013</span><span>1050</span></div>
+        <p class="gc-note" id="presNote">&nbsp;</p>
+      </div>
+
+      <!-- 기온 -->
+      <div class="gauge-card temp">
+        <div class="gc-head">
+          <span class="gc-icon" aria-hidden="true">🌡️</span>
+          <span class="gc-title">기온</span>
+        </div>
+        <div class="gc-value"><b id="tempVal">--</b> <span class="gc-unit">°C</span></div>
+        <div class="gc-bar"><div class="gc-fill" id="tempFill"></div></div>
+        <div class="gc-range"><span>-20</span><span>10</span><span>40</span></div>
+        <p class="gc-note" id="tempNote">&nbsp;</p>
+      </div>
+
+      <!-- 습도 -->
+      <div class="gauge-card humid">
+        <div class="gc-head">
+          <span class="gc-icon" aria-hidden="true">💧</span>
+          <span class="gc-title">습도</span>
+        </div>
+        <div class="gc-value"><b id="humidVal">--</b> <span class="gc-unit">%</span></div>
+        <div class="gc-bar"><div class="gc-fill" id="humidFill"></div></div>
+        <div class="gc-range"><span>0</span><span>50</span><span>100</span></div>
+        <p class="gc-note" id="humidNote">&nbsp;</p>
+      </div>
+    </section>
+
+    <!-- 파생값 -->
+    <section class="readouts" aria-label="계산된 값">
+      <div class="card">
+        <span class="card-label">이슬점</span>
+        <span class="card-value"><b id="dewVal">--</b> °C</span>
+      </div>
+      <div class="card">
+        <span class="card-label">해면기압</span>
+        <span class="card-value"><b id="mslVal">--</b> hPa</span>
+      </div>
+      <div class="card">
+        <span class="card-label">체감온도</span>
+        <span class="card-value"><b id="feelVal">--</b> °C</span>
+      </div>
+    </section>
+
+    <!-- 기체 법칙과 연결 -->
+    <section class="explain">
+      <h2>측정 원리</h2>
+      <p>
+        휴대폰 브라우저는 보안 정책 때문에 기압·온도·습도 센서 값을 웹페이지에
+        직접 알려주지 않아요. 대신 이 페이지는 휴대폰의 <b>위치 센서(GPS)</b>로
+        현재 위치를 알아낸 뒤, 그 지점의 <b>실시간 기상 관측값</b>
+        (Open-Meteo)을 받아와 보여줍니다.
+      </p>
+      <h2>기체 법칙과의 연결</h2>
+      <p>
+        지금 측정된 <b>기압</b>은 공기 입자들이 사방에서 부딪히며 누르는 힘이에요.
+        보일 법칙 실험에서 본 것처럼 공기가 눌려 부피가 줄면 기압은 커지고,
+        샤를 법칙처럼 기온이 오르면 공기가 팽창해 가벼워져 저기압이 만들어집니다.
+      </p>
+      <p class="tip">💡 산에 올라가면 위에 쌓인 공기가 적어져 기압이 낮아져요.
+        오늘 값을 표준 기압(1013 hPa)과 비교해 보세요.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>중학교 과학 · 실시간 대기 관측 (Open-Meteo)</p>
+  </footer>
+
+  <script src="weather.js"></script>
+</body>
+</html>

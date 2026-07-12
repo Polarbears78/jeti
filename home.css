@@ -14,6 +14,7 @@
   --ohm: #f59e0b;
   --resistance: #fb7185;
   --accel: #4ade80;
+  --weather: #60a5fa;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bot: env(safe-area-inset-bottom, 0px);
 }
@@ -93,6 +94,7 @@ html, body {
 .exp-card.ohm { --theme: var(--ohm); }
 .exp-card.resistance { --theme: var(--resistance); }
 .exp-card.accel { --theme: var(--accel); }
+.exp-card.weather { --theme: var(--weather); }
 .exp-card:active { border-color: var(--theme); }
 
 /* 홀수 개일 때 마지막 카드는 한 줄 전체 차지 */

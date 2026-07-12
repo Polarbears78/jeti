@@ -1,0 +1,164 @@
+:root {
+  --bg: #0b1226;
+  --bg-soft: #16203c;
+  --card: #16203c;
+  --card-line: #2a3a63;
+  --text: #e4ecff;
+  --muted: #93a5cc;
+  --accent: #60a5fa;
+  --pres: #a78bfa;
+  --temp: #fb923c;
+  --humid: #22d3ee;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: contain;
+}
+
+.app-header { text-align: center; padding: calc(16px + var(--safe-top)) 16px 8px; }
+.app-header h1 { margin: 0; font-size: 1.35rem; letter-spacing: -0.02em; }
+.subtitle { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+.home-link {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+  background: var(--bg-soft);
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+.home-link:active { color: var(--text); }
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 16px calc(24px + var(--safe-bot));
+}
+
+/* ---- 상태/위치 ---- */
+.status-card {
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 14px;
+  padding: 12px 14px;
+  margin-top: 6px;
+}
+.status-row { display: flex; align-items: center; gap: 10px; }
+.loc-icon { font-size: 1.3rem; }
+.loc-text { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.loc-text b { font-size: 0.95rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.loc-sub { font-size: 0.75rem; color: var(--muted); }
+.measure-btn {
+  background: var(--accent);
+  color: #0b1226;
+  border: none;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.measure-btn:disabled { opacity: 0.55; }
+.measure-btn:active { filter: brightness(1.15); }
+.status-msg { margin: 8px 0 0; font-size: 0.78rem; color: var(--muted); }
+.status-msg:empty { display: none; }
+.status-msg.error { color: #fda4af; }
+
+/* ---- 게이지 3종 ---- */
+.gauges { display: flex; flex-direction: column; gap: 12px; margin-top: 14px; }
+.gauge-card {
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 14px;
+  padding: 14px;
+  border-left: 4px solid var(--gc, var(--accent));
+}
+.gauge-card.pressure { --gc: var(--pres); }
+.gauge-card.temp { --gc: var(--temp); }
+.gauge-card.humid { --gc: var(--humid); }
+
+.gc-head { display: flex; align-items: center; gap: 8px; }
+.gc-icon { font-size: 1.1rem; }
+.gc-title { font-size: 0.9rem; font-weight: 700; color: var(--muted); }
+.gc-value { margin-top: 6px; }
+.gc-value b { font-size: 2rem; font-weight: 800; color: var(--gc); letter-spacing: -0.02em; }
+.gc-unit { font-size: 0.95rem; color: var(--muted); }
+
+.gc-bar {
+  position: relative;
+  height: 10px;
+  border-radius: 6px;
+  background: var(--bg-soft);
+  overflow: visible;
+  margin-top: 10px;
+}
+.gc-fill {
+  height: 100%;
+  width: 0%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--gc) 45%, transparent), var(--gc));
+  transition: width 0.6s ease-out;
+}
+/* 표준 기압 눈금 (기압 카드에서만 보임) */
+.gc-mark {
+  display: none;
+  position: absolute;
+  top: -4px;
+  bottom: -4px;
+  left: 63.25%; /* (1013.25-950)/(1050-950) */
+  width: 2px;
+  background: rgba(228,236,255,0.6);
+  border-radius: 2px;
+}
+.gauge-card.pressure .gc-mark { display: block; }
+
+.gc-range {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 0.68rem;
+  color: var(--muted);
+}
+.gc-note { margin: 8px 0 0; font-size: 0.78rem; color: var(--muted); min-height: 1em; }
+
+/* ---- 파생값 카드 ---- */
+.readouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 14px; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  padding: 10px 6px;
+  text-align: center;
+}
+.card-label { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+.card-value { font-size: 0.9rem; color: var(--muted); }
+.card-value b { font-size: 1.1rem; color: var(--text); }
+
+/* ---- 설명 ---- */
+.explain { margin-top: 18px; line-height: 1.6; font-size: 0.9rem; }
+.explain h2 { font-size: 1.05rem; margin: 14px 0 8px; }
+.explain p { margin: 0 0 10px; color: var(--text); }
+.tip { font-size: 0.85rem; color: var(--muted) !important; }
+
+.app-footer {
+  text-align: center;
+  padding: 8px 16px calc(20px + var(--safe-bot));
+  font-size: 0.72rem;
+  color: var(--muted);
+}
