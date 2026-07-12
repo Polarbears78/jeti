@@ -102,7 +102,7 @@ html, body {
 .track-tip b { color: var(--accent); }
 
 /* ---- 측정값 ---- */
-.readouts { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 12px; }
+.readouts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
 .card { background: var(--card); border: 1px solid var(--card-line); border-radius: 12px; padding: 10px 6px; text-align: center; }
 .card.highlight { border-color: var(--accent); background: linear-gradient(180deg, rgba(34,211,238,0.12), var(--card)); }
 .card-label { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }

@@ -13,6 +13,8 @@
   const WINDOW = 8;           // 그래프 표시 구간(초)
   const V_DT = 0.22;          // 속력 계산에 쓰는 시간 간격(초)
   const DEFAULT_VIEW_M = 1.0; // 보정 전 가정: 화면 가로 = 1 m
+  const STROBE_DT = 0.25;     // 운동 기록(스트로보) 점 간격(초)
+  const STROBE_MAX = 400;     // 운동 기록 최대 점 수
 
   // ----- DOM -----
   const video = document.getElementById("video");
@@ -34,6 +36,8 @@
   const vMaxVal = document.getElementById("vMaxVal");
   const dvVal = document.getElementById("dvVal");
   const aVal = document.getElementById("aVal");
+  const distVal = document.getElementById("distVal");
+  const timeVal = document.getElementById("timeVal");
 
   // ----- 처리용 캔버스 -----
   const proc = document.createElement("canvas");
@@ -62,6 +66,10 @@
   let t0 = 0;                 // 측정 시작(초)
   let vStart = 0, vStartSet = false, vMax = 0;
   const vSamples = [];        // {t, v} 그래프용
+
+  // 운동 기록(다중 섬광 사진처럼 일정 시간 간격의 위치 점)
+  const strobe = [];          // {x, y(proc px), label(초 눈금 문자열|null)}
+  let travelDist = 0;         // 측정 중 총 이동 거리(m)
 
   // 기준자 보정(뷰포트 비율 좌표)
   let calibMode = false, calibSet = false;
@@ -316,6 +324,28 @@
 
     const s = viewW / PROC_W; // proc px → CSS px
 
+    // 운동 기록(스트로보 점): 점 간격이 넓을수록 빠르게 움직인 구간
+    if (strobe.length > 1) {
+      octx.strokeStyle = "rgba(250,204,21,0.3)";
+      octx.lineWidth = 1.5;
+      octx.beginPath();
+      octx.moveTo(strobe[0].x * s, strobe[0].y * s);
+      for (let i = 1; i < strobe.length; i++) octx.lineTo(strobe[i].x * s, strobe[i].y * s);
+      octx.stroke();
+      octx.font = "700 11px sans-serif";
+      octx.textAlign = "center";
+      for (const p of strobe) {
+        octx.fillStyle = p.label ? "#fde047" : "rgba(250,204,21,0.85)";
+        octx.beginPath();
+        octx.arc(p.x * s, p.y * s, p.label ? 5 : 3, 0, Math.PI * 2);
+        octx.fill();
+        if (p.label) {
+          octx.fillStyle = "#fef9c3";
+          octx.fillText(p.label, p.x * s, p.y * s - 9);
+        }
+      }
+    }
+
     if (tracking) {
       // 이동 궤적
       if (posBuf.length > 1) {
@@ -406,6 +436,18 @@
         dvVal.textContent = (dv >= 0 ? "+" : "") + dv.toFixed(2);
         aVal.textContent = el > 0.3 ? (dv / el).toFixed(2) : "0.00";
         recTime.textContent = el.toFixed(1) + " s";
+        timeVal.textContent = el.toFixed(1);
+
+        // 운동 기록: STROBE_DT 간격으로 위치 점 남기기
+        const last = strobe[strobe.length - 1];
+        if (!last || el - last.el >= STROBE_DT) {
+          const label = (!last || Math.floor(el) > Math.floor(last.el)) && el >= 1
+            ? Math.floor(el) + "s" : null;
+          if (last) travelDist += Math.hypot(tx - last.x, ty - last.y) * metersPerProcPx();
+          strobe.push({ x: tx, y: ty, el: el, label: label });
+          if (strobe.length > STROBE_MAX) strobe.shift();
+          distVal.textContent = travelDist.toFixed(2);
+        }
       }
 
       drawOverlay(nowSec);
@@ -477,7 +519,9 @@
     measuring = !measuring;
     if (measuring) {
       vMax = 0; vStartSet = false;
+      strobe.length = 0; travelDist = 0;
       vMaxVal.textContent = "0.00"; dvVal.textContent = "0.00"; aVal.textContent = "0.00";
+      distVal.textContent = "0.00"; timeVal.textContent = "0.0";
       t0 = performance.now() / 1000;
       measureBtn.textContent = "■ 측정 정지";
       measureBtn.classList.add("rec");
@@ -503,6 +547,7 @@
     tracking = false; lost = false;
     template = null;
     posBuf.length = 0; vSamples.length = 0;
+    strobe.length = 0; travelDist = 0;
     vSmooth = 0; hasV = false; vMax = 0; vStartSet = false;
     measureBtn.textContent = "● 측정 시작";
     measureBtn.classList.remove("rec");
@@ -511,6 +556,7 @@
     speedHud.textContent = "0.00";
     vVal.textContent = "0.00"; vMaxVal.textContent = "0.00";
     dvVal.textContent = "0.00"; aVal.textContent = "0.00";
+    distVal.textContent = "0.00"; timeVal.textContent = "0.0";
     if (started) {
       trackTip.innerHTML = demoActive
         ? "📺 데모 화면입니다. 움직이는 공을 <b>탭</b>해 보세요."
