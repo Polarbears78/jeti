@@ -474,11 +474,13 @@
       }
       return;
     }
-    // 추적 대상 지정
+    // 추적 대상 지정: 탭한 순간 추적 + 측정이 바로 시작된다.
+    // 이미 측정 중이면(추적을 놓쳐 다시 탭한 경우) 기록을 유지한 채 추적만 재개.
     if (captureTemplate(p.x / viewW * PROC_W, p.y / viewH * procH)) {
       tracking = true; lost = false;
       posBuf.length = 0; hasV = false; vSmooth = 0;
-      trackTip.innerHTML = "🎯 추적 중입니다. 놓치면 물체를 <b>다시 탭</b>하세요.";
+      if (!measuring) toggleMeasure();
+      trackTip.innerHTML = "🎯 측정 중입니다. 놓치면 물체를 <b>다시 탭</b>하세요. (■ 버튼으로 정지)";
     }
     e.preventDefault();
   });
@@ -502,10 +504,10 @@
     startBtn.textContent = "준비 중…";
     try {
       await startCamera();
-      trackTip.innerHTML = "💡 폰을 고정하고, 화면 속 <b>움직이는 물체를 탭</b>하면 추적이 시작됩니다.";
+      trackTip.innerHTML = "💡 폰을 고정하고, 화면 속 <b>움직이는 물체를 탭</b>하면 바로 측정이 시작됩니다.";
     } catch (err) {
       demoActive = true;
-      trackTip.innerHTML = "📺 카메라를 사용할 수 없어 <b>데모 화면</b>입니다. 움직이는 공을 탭해 보세요.";
+      trackTip.innerHTML = "📺 카메라를 사용할 수 없어 <b>데모 화면</b>입니다. 움직이는 공을 탭하면 바로 측정이 시작됩니다.";
     }
     started = true;
     viewHint.style.display = "none";
@@ -559,8 +561,8 @@
     distVal.textContent = "0.00"; timeVal.textContent = "0.0";
     if (started) {
       trackTip.innerHTML = demoActive
-        ? "📺 데모 화면입니다. 움직이는 공을 <b>탭</b>해 보세요."
-        : "💡 폰을 고정하고, 화면 속 <b>움직이는 물체를 탭</b>하면 추적이 시작됩니다.";
+        ? "📺 데모 화면입니다. 움직이는 공을 <b>탭</b>하면 바로 측정이 시작됩니다."
+        : "💡 폰을 고정하고, 화면 속 <b>움직이는 물체를 탭</b>하면 바로 측정이 시작됩니다.";
     }
     drawGraph(performance.now() / 1000);
   }
