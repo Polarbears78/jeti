@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#0a1a0f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>광합성량 측정 가상 실험</title>
+<link rel="manifest" href="manifest.webmanifest" />
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png" />
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="과학실험" />
+<link rel="stylesheet" href="photosynthesis.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a class="home-link" href="index.html">← 실험 목록</a>
+    <h1>광합성량 측정 가상 실험</h1>
+    <p class="subtitle">빛·이산화탄소·온도가 광합성량에 주는 영향</p>
+  </header>
+
+  <main class="container">
+    <!-- 실험 장치: 전등 + 물풀(검정말)이 든 비커 -->
+    <section class="stage" aria-label="광합성 실험 장치">
+      <div class="scene" id="scene">
+        <!-- 전등: 빛의 세기에 따라 밝기·빛줄기가 변함 -->
+        <div class="lamp" aria-hidden="true">
+          <div class="rays"></div>
+          <div class="bulb">💡</div>
+        </div>
+
+        <!-- 비커 + 물 -->
+        <div class="beaker" aria-hidden="true">
+          <div class="water" id="water">
+            <canvas id="bubbles"></canvas>
+            <div class="glow" id="glow"></div>
+            <!-- 물풀(검정말) -->
+            <div class="plant">
+              <span class="stem s1"></span>
+              <span class="stem s2"></span>
+              <span class="stem s3"></span>
+              <span class="pot"></span>
+            </div>
+          </div>
+          <div class="water-line"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 기포 발생 속도 표시 막대 -->
+    <section class="speed-strip" aria-label="기포 발생 속도">
+      <span class="ss-label">기포 발생</span>
+      <div class="ss-bar">
+        <div class="ss-fill" id="rateFill"></div>
+      </div>
+      <span class="ss-value"><b id="rateVal">0</b> 개/분</span>
+    </section>
+
+    <!-- 측정값 카드 -->
+    <section class="readouts" aria-label="측정값">
+      <div class="card highlight">
+        <span class="card-label">광합성량</span>
+        <span class="card-value"><b id="photoVal">0</b> %</span>
+      </div>
+      <div class="card">
+        <span class="card-label">O₂ 기포</span>
+        <span class="card-value"><b id="bubbleVal">0</b> 개/분</span>
+      </div>
+      <div class="card">
+        <span class="card-label">한정 요인</span>
+        <span class="card-value"><b id="limitVal">빛</b></span>
+      </div>
+    </section>
+
+    <!-- 조절 슬라이더 -->
+    <section class="controls">
+      <label class="slider-row">
+        <span>빛의 세기 <b id="lightLabel">50</b> %</span>
+        <input type="range" id="lightSlider" min="0" max="100" step="1" value="50" />
+      </label>
+      <label class="slider-row">
+        <span>CO₂ 농도 (탄산수소나트륨) <b id="co2Label">50</b> %</span>
+        <input type="range" id="co2Slider" min="0" max="100" step="1" value="50" />
+      </label>
+      <label class="slider-row">
+        <span>온도 <b id="tempLabel">30</b> ℃</span>
+        <input type="range" id="tempSlider" min="5" max="45" step="1" value="30" />
+      </label>
+      <div class="info-row">
+        <span>물풀: <b>검정말</b></span>
+        <button class="reset-btn" id="resetBtn" type="button">초기화</button>
+      </div>
+    </section>
+
+    <!-- 광합성량-빛 그래프 -->
+    <section class="graph-section" aria-label="광합성량-빛의 세기 그래프">
+      <div class="graph-head">
+        <h2>광합성량 – 빛의 세기</h2>
+        <span class="legend">현재 측정점 ●</span>
+      </div>
+      <canvas id="graph"></canvas>
+    </section>
+
+    <!-- 설명 -->
+    <section class="explain">
+      <h2>광합성량은 어떻게 측정하나요?</h2>
+      <p>
+        물풀(검정말)은 광합성을 하면서 <b>산소(O₂)</b>를 내보냅니다. 물속에서
+        발생하는 <b>기포의 개수</b>를 세면 광합성이 얼마나 활발한지 알 수 있어요.
+      </p>
+      <p class="formula">광합성량 ∝ 산소 기포 발생 속도</p>
+      <p>
+        광합성량은 <b>빛의 세기</b>, <b>이산화탄소 농도</b>, <b>온도</b>에 함께
+        영향을 받습니다. 한 가지를 늘려도 다른 조건이 부족하면 더 이상 늘지
+        않는데, 이때 가장 부족한 조건을 <b>한정(제한) 요인</b>이라고 합니다.
+      </p>
+      <p class="tip">💡 빛을 세게 해도 그래프가 평평해지면, CO₂ 농도나 온도를
+        올려 보세요. 광합성량이 다시 늘어납니다. 온도를 너무 높이면(약 40℃ 이상)
+        효소가 변형되어 광합성량이 급격히 줄어듭니다.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>중학교 과학 · 광합성량 측정 시뮬레이션</p>
+  </footer>
+
+  <script src="photosynthesis.js"></script>
+</body>
+</html>
