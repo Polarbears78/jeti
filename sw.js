@@ -1,5 +1,5 @@
 /* 간단한 오프라인 캐시 서비스 워커 (앱 설치용) */
-const CACHE = "jeti-v1";
+const CACHE = "jeti-v2";
 const ASSETS = [
   "./",
   "./index.html", "./home.css",
@@ -12,6 +12,7 @@ const ASSETS = [
   "./resistance.html", "./resistance.css", "./resistance.js",
   "./accel.html", "./accel.css", "./accel.js",
   "./weather.html", "./weather.css", "./weather.js",
+  "./photosynthesis.html", "./photosynthesis.css", "./photosynthesis.js",
   "./manifest.webmanifest",
   "./icons/icon-192.png", "./icons/icon-512.png",
 ];

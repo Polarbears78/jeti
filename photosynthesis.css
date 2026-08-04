@@ -1,0 +1,277 @@
+:root {
+  --bg: #0a1a0f;
+  --bg-soft: #12241a;
+  --card: #12241a;
+  --card-line: #23402c;
+  --text: #e6f7ec;
+  --muted: #8fbda0;
+  --accent: #22c55e;
+  --accent-2: #38bdf8;
+  --sun: #fbbf24;
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bot: env(safe-area-inset-bottom, 0px);
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
+  -webkit-text-size-adjust: 100%;
+  overscroll-behavior-y: contain;
+}
+
+.app-header {
+  text-align: center;
+  padding: calc(16px + var(--safe-top)) 16px 8px;
+}
+.app-header h1 { margin: 0; font-size: 1.35rem; letter-spacing: -0.02em; }
+.subtitle { margin: 4px 0 0; font-size: 0.85rem; color: var(--muted); }
+
+.container {
+  max-width: 480px;
+  margin: 0 auto;
+  padding: 8px 16px calc(24px + var(--safe-bot));
+}
+
+/* ---- 실험 장치 ---- */
+.stage { display: flex; justify-content: center; padding: 8px 0 4px; }
+/* --light(0~1)로 전등 밝기·빛줄기·수조 밝기 조절 */
+.scene { position: relative; width: 260px; height: 400px; --light: 0.5; }
+
+/* 전등 */
+.lamp {
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.bulb {
+  font-size: 2rem;
+  filter: drop-shadow(0 0 calc(4px + var(--light) * 22px)
+          rgba(251, 191, 36, calc(0.3 + var(--light) * 0.7)));
+  transition: filter 0.15s ease-out;
+}
+.rays {
+  position: absolute;
+  top: 30px;
+  width: 40px;
+  height: 150px;
+  background: linear-gradient(180deg,
+    rgba(251, 191, 36, 0.55), rgba(251, 191, 36, 0));
+  clip-path: polygon(38% 0, 62% 0, 100% 100%, 0 100%);
+  opacity: var(--light);
+  transition: opacity 0.15s ease-out;
+}
+
+/* 비커 */
+.beaker {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 180px;
+  height: 300px;
+  border: 4px solid #6aa886;
+  border-top: none;
+  border-radius: 0 0 26px 26px;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.04), rgba(56, 189, 248, 0.10));
+  overflow: hidden;
+}
+.water {
+  position: absolute;
+  left: 0; right: 0; bottom: 0;
+  height: 88%;
+  background: linear-gradient(180deg, rgba(56, 189, 248, 0.16), rgba(37, 99, 235, 0.28));
+  overflow: hidden;
+}
+.water-line {
+  position: absolute;
+  left: 0; right: 0;
+  bottom: calc(88% - 2px);
+  height: 3px;
+  background: rgba(186, 230, 253, 0.6);
+}
+#bubbles { position: absolute; inset: 0; width: 100%; height: 100%; display: block; z-index: 2; }
+/* 빛에 따라 물이 밝아지는 오버레이 */
+.glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(120% 80% at 50% 0%,
+    rgba(251, 191, 36, 0.22), rgba(251, 191, 36, 0) 70%);
+  opacity: var(--light);
+  transition: opacity 0.15s ease-out;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* 물풀(검정말) */
+.plant {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 90px; height: 150px;
+  z-index: 3;
+}
+.stem {
+  position: absolute;
+  bottom: 12px;
+  width: 8px;
+  border-radius: 6px;
+  background: linear-gradient(0deg, #15803d, #22c55e);
+  transform-origin: bottom center;
+  box-shadow: inset -2px 0 0 rgba(0,0,0,0.15);
+}
+.stem::before, .stem::after {
+  /* 잎 표현 */
+  content: "";
+  position: absolute;
+  width: 14px; height: 8px;
+  background: #22c55e;
+  border-radius: 60% 60% 60% 60% / 100% 100% 40% 40%;
+}
+.stem::before { left: -12px; top: 20%; transform: rotate(-35deg); }
+.stem::after  { right: -12px; top: 45%; transform: rotate(35deg); }
+.stem.s1 { left: 50%; height: 132px; margin-left: -4px; transform: rotate(-4deg); }
+.stem.s2 { left: 30%; height: 104px; transform: rotate(-14deg); }
+.stem.s3 { left: 62%; height: 116px; transform: rotate(12deg); }
+.pot {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 60px; height: 16px;
+  background: #4a3728;
+  border-radius: 6px 6px 3px 3px;
+}
+
+/* ---- 기포 발생 속도 ---- */
+.speed-strip {
+  display: flex; align-items: center; gap: 10px;
+  margin-top: 16px;
+  background: var(--card);
+  border: 1px solid var(--card-line);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.8rem; color: var(--muted);
+}
+.ss-label { white-space: nowrap; }
+.ss-bar {
+  flex: 1; height: 10px; border-radius: 6px;
+  background: var(--bg-soft); overflow: hidden;
+}
+.ss-fill {
+  height: 100%; width: 0%;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--accent-2), var(--accent));
+  transition: width 0.2s ease-out;
+}
+.ss-value { white-space: nowrap; }
+.ss-value b { color: var(--accent); font-size: 0.95rem; }
+
+/* ---- 측정값 ---- */
+.readouts {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 8px; margin-top: 12px;
+}
+.card {
+  background: var(--card); border: 1px solid var(--card-line);
+  border-radius: 12px; padding: 10px 6px; text-align: center;
+}
+.card.highlight {
+  border-color: var(--accent);
+  background: linear-gradient(180deg, rgba(34,197,94,0.14), var(--card));
+}
+.card-label { display: block; font-size: 0.72rem; color: var(--muted); margin-bottom: 4px; }
+.card-value { font-size: 0.95rem; }
+.card-value b { font-size: 1.15rem; color: var(--accent-2); }
+.card.highlight .card-value b { color: var(--accent); }
+
+/* ---- 컨트롤 ---- */
+.controls {
+  margin-top: 16px;
+  background: var(--card); border: 1px solid var(--card-line);
+  border-radius: 12px; padding: 14px;
+}
+.slider-row {
+  display: flex; flex-direction: column; gap: 8px;
+  font-size: 0.85rem; color: var(--muted);
+  margin-bottom: 14px;
+}
+.slider-row:last-of-type { margin-bottom: 0; }
+.slider-row b { color: var(--text); }
+input[type="range"] {
+  -webkit-appearance: none; appearance: none;
+  width: 100%; height: 6px; border-radius: 4px;
+  background: linear-gradient(90deg, #1e3a2b, var(--accent));
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--accent);
+  box-shadow: 0 2px 6px rgba(0,0,0,0.4); cursor: pointer;
+}
+input[type="range"]::-moz-range-thumb {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: #fff; border: 3px solid var(--accent); cursor: pointer;
+}
+.info-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 14px; font-size: 0.85rem; color: var(--muted);
+}
+.info-row b { color: var(--text); }
+.reset-btn {
+  background: var(--bg-soft); color: var(--text);
+  border: 1px solid var(--card-line); border-radius: 8px;
+  padding: 8px 14px; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+}
+.reset-btn:active { background: #0a1a0f; }
+
+/* ---- 그래프 ---- */
+.graph-section {
+  margin-top: 18px;
+  background: var(--card); border: 1px solid var(--card-line);
+  border-radius: 12px; padding: 14px;
+}
+.graph-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 8px;
+}
+.graph-head h2 { margin: 0; font-size: 1rem; }
+.legend { font-size: 0.72rem; color: var(--accent); }
+#graph { width: 100%; height: 200px; display: block; }
+
+/* ---- 설명 ---- */
+.explain { margin-top: 18px; line-height: 1.6; font-size: 0.9rem; }
+.explain h2 { font-size: 1.05rem; margin: 0 0 8px; }
+.explain p { margin: 0 0 10px; color: var(--text); }
+.formula {
+  text-align: center; font-size: 1.05rem; font-weight: 700;
+  color: var(--accent); background: var(--bg-soft);
+  border-radius: 10px; padding: 10px; letter-spacing: 0.02em;
+}
+.tip { font-size: 0.85rem; color: var(--muted) !important; }
+
+.app-footer {
+  text-align: center;
+  padding: 8px 16px calc(20px + var(--safe-bot));
+  font-size: 0.72rem; color: var(--muted);
+}
+.home-link {
+  display: inline-block;
+  margin-bottom: 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--muted);
+  background: var(--bg-soft);
+  border: 1px solid var(--card-line);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
+.home-link:active { color: var(--text); }
