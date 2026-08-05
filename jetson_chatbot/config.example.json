@@ -1,0 +1,8 @@
+{
+  "student_code": "학생에게 알려줄 접속 암호",
+  "teacher_key": "교사만 아는 비밀키",
+  "model": "exaone3.5:7.8b",
+  "port": 8000,
+  "rate_limit_count": 20,
+  "rate_limit_window": 600
+}

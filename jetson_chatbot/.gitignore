@@ -1,0 +1,15 @@
+# 암호·비밀키 (절대 올리지 말 것)
+config.json
+secret.key
+보안정보.txt
+
+# 학생 질문 기록 (개인정보)
+chatlog.db
+*.db
+
+# 로그
+tunnel.log
+*.log
+
+__pycache__/
+*.pyc
