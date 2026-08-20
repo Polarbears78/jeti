@@ -7,6 +7,9 @@ secret.key
 chatlog.db
 *.db
 
+# 수업 자료 (저작권 자료가 들어갈 수 있음)
+materials/
+
 # 로그
 tunnel.log
 *.log

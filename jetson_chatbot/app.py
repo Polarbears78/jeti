@@ -63,6 +63,12 @@ DB_PATH = _cfg.get("db_path", "chatlog.db")
 RATE_LIMIT_COUNT = int(_cfg.get("rate_limit_count", 20))   # 한 사람이
 RATE_LIMIT_WINDOW = int(_cfg.get("rate_limit_window", 600))  # 이 초 동안 보낼 수 있는 질문 수
 
+# 수업 자료(PDF) — 교사만 올릴 수 있고, 학생 질문에 근거 자료로 쓰인다
+MATERIAL_DIR = "materials"
+MATERIAL_MAX_MB = 20
+# 모델 컨텍스트가 32k라, 자료는 넉넉히 잡아 이 글자 수까지만 쓴다
+MATERIAL_MAX_CHARS = int(_cfg.get("material_max_chars", 12000))
+
 SYSTEM_PROMPT = (
     "당신은 육민관고등학교 수업용 학습 도우미입니다.\n"
     "규칙:\n"
@@ -127,6 +133,91 @@ def student_ok():
 
 def teacher_ok():
     return session.get("teacher") is True
+
+
+# ===== 수업 자료 =====
+def material_path(name=""):
+    os.makedirs(MATERIAL_DIR, exist_ok=True)
+    return os.path.join(MATERIAL_DIR, name) if name else MATERIAL_DIR
+
+
+def safe_name(name):
+    """경로 조작을 막고 파일명만 남긴다."""
+    name = os.path.basename(name or "").replace("\\", "")
+    return "".join(c for c in name if c not in '/:*?"<>|').strip()[:100]
+
+
+def list_materials():
+    d = material_path()
+    if not os.path.isdir(d):
+        return []
+    out = []
+    for f in sorted(os.listdir(d)):
+        if f.endswith(".txt"):
+            continue
+        p = os.path.join(d, f)
+        txt = p + ".txt"
+        chars = 0
+        if os.path.exists(txt):
+            chars = os.path.getsize(txt)
+        out.append(
+            {
+                "name": f,
+                "size_kb": round(os.path.getsize(p) / 1024),
+                "chars": chars,
+                "active": session.get("teacher") is not None
+                and f == _active_material(),
+            }
+        )
+    return out
+
+
+def _active_material():
+    p = os.path.join(material_path(), ".active")
+    if os.path.exists(p):
+        with open(p, encoding="utf-8") as f:
+            name = f.read().strip()
+        if name and os.path.exists(os.path.join(material_path(), name)):
+            return name
+    return ""
+
+
+def set_active_material(name):
+    with open(os.path.join(material_path(), ".active"), "w", encoding="utf-8") as f:
+        f.write(name or "")
+
+
+def extract_pdf_text(path):
+    """PDF에서 글자를 뽑아 .txt 로 저장하고, 뽑은 글자 수를 돌려준다."""
+    from pypdf import PdfReader
+
+    reader = PdfReader(path)
+    parts = []
+    total = 0
+    for page in reader.pages:
+        t = (page.extract_text() or "").strip()
+        if not t:
+            continue
+        parts.append(t)
+        total += len(t)
+        if total > MATERIAL_MAX_CHARS * 2:
+            break
+    text = "\n\n".join(parts)
+    with open(path + ".txt", "w", encoding="utf-8") as f:
+        f.write(text)
+    return len(text), len(reader.pages)
+
+
+def active_material_text():
+    """학생 질문에 붙일 수업 자료 본문. 없으면 빈 문자열."""
+    name = _active_material()
+    if not name:
+        return "", ""
+    txt = os.path.join(material_path(), name + ".txt")
+    if not os.path.exists(txt):
+        return "", ""
+    with open(txt, encoding="utf-8") as f:
+        return name, f.read()[:MATERIAL_MAX_CHARS]
 
 
 # ===== DB =====
@@ -201,7 +292,7 @@ STUDENT_HTML = """
 </style>
 </head>
 <body>
-<header>수업 챗봇 <small>궁금한 것을 질문하세요</small></header>
+<header>수업 챗봇 <small>{% if material %}자료: {{ material }}{% else %}궁금한 것을 질문하세요{% endif %}</small></header>
 <div id="namebar">이름(또는 조): <input id="name" placeholder="예: 2조 김철수"></div>
 <div id="chat"></div>
 <form id="f">
@@ -301,7 +392,7 @@ LOGIN_HTML = """
 @app.route("/", methods=["GET", "POST"])
 def student_page():
     if student_ok():
-        return render_template_string(STUDENT_HTML)
+        return render_template_string(STUDENT_HTML, material=_active_material())
     error = None
     if request.method == "POST":
         if not rate_ok("login:" + client_ip()):
@@ -341,7 +432,21 @@ def api_chat():
     if not question:
         return "질문이 비어 있습니다.", 400
 
-    messages = [{"role": "system", "content": SYSTEM_PROMPT}]
+    system = SYSTEM_PROMPT
+    mat_name, mat_text = active_material_text()
+    if mat_text:
+        # 수업 자료가 지정돼 있으면 그 내용을 근거로 답하게 한다.
+        system += (
+            f"\n\n=== 수업 자료: {mat_name} ===\n{mat_text}\n=== 자료 끝 ===\n\n"
+            "위 수업 자료를 기준으로 답하세요. 답하기 전에 질문 내용이 자료 안에 "
+            "있는지 먼저 확인하십시오.\n"
+            "- 자료에 있으면: 자료 내용을 근거로 답합니다.\n"
+            "- 자료에 없으면: 반드시 첫 문장을 "
+            "'수업 자료에는 없는 내용이지만,' 으로 시작한 뒤 일반 지식으로 답합니다.\n"
+            "이 규칙은 예외 없이 지켜야 합니다."
+        )
+
+    messages = [{"role": "system", "content": system}]
     for m in history[-6:]:
         if m.get("role") in ("user", "assistant") and m.get("content"):
             messages.append({"role": m["role"], "content": str(m["content"])[:2000]})
@@ -398,6 +503,10 @@ TEACHER_HTML = """
   #summary { background: #fff; border: 1px solid #dde2ec; border-radius: 8px;
              padding: 14px; margin: 12px 0; white-space: pre-wrap; line-height: 1.6; display: none; }
   .count { color: #666; font-size: 14px; }
+  .panel { background: #fff; border: 1px solid #dde2ec; border-radius: 8px;
+           padding: 14px; margin: 16px 0; }
+  .panel h3 { margin: 0 0 6px; font-size: 16px; }
+  .hint { color: #667; font-size: 13px; margin: 0 0 12px; }
 </style>
 </head>
 <body>
@@ -417,6 +526,47 @@ TEACHER_HTML = """
   <a class="btn" href="/logout">로그아웃</a>
 </div>
 <div id="summary"></div>
+
+<div class="panel">
+  <h3>수업 자료 (PDF)</h3>
+  <p class="hint">자료를 올리고 <b>사용</b>을 누르면, 학생 질문에 이 자료를 근거로 답합니다.
+     자료 없이 쓰려면 <b>사용 안 함</b>을 누르세요.</p>
+  <form method="post" action="/teacher/material/upload" enctype="multipart/form-data"
+        style="margin-bottom:10px">
+    <input type="file" name="pdf" accept="application/pdf" required>
+    <button class="primary">올리기</button>
+  </form>
+  <table>
+    <tr><th>파일</th><th style="width:90px">크기</th><th style="width:110px">읽은 글자</th>
+        <th style="width:170px">상태</th></tr>
+    <tr>
+      <td colspan="3" style="color:#667">(자료 사용 안 함 — 일반 질문만)</td>
+      <td>{% if not active %}<b>● 사용 중</b>{% else %}
+        <form method="post" action="/teacher/material/select" style="display:inline">
+          <input type="hidden" name="name" value="">
+          <button>사용 안 함</button></form>{% endif %}</td>
+    </tr>
+    {% for m in materials %}
+    <tr>
+      <td>{{ m.name }}</td>
+      <td>{{ m.size_kb }} KB</td>
+      <td>{% if m.chars %}{{ m.chars }}자{% else %}<span style="color:#c0392b">추출 실패</span>{% endif %}</td>
+      <td>
+        {% if m.name == active %}<b>● 사용 중</b>{% else %}
+        <form method="post" action="/teacher/material/select" style="display:inline">
+          <input type="hidden" name="name" value="{{ m.name }}">
+          <button class="primary">사용</button></form>
+        {% endif %}
+        <form method="post" action="/teacher/material/delete" style="display:inline"
+              onsubmit="return confirm('{{ m.name }} 을(를) 삭제할까요?')">
+          <input type="hidden" name="name" value="{{ m.name }}">
+          <button>삭제</button></form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+  {% if msg %}<p class="hint" style="color:#2d5be3">{{ msg }}</p>{% endif %}
+</div>
 <table>
   <tr><th style="width:130px">시각</th><th style="width:110px">학생</th><th>질문</th><th>답변(요약)</th></tr>
   {% for r in rows %}
@@ -482,8 +632,93 @@ def teacher_page():
     date = request.args.get("date", "")
     rows = fetch_logs(date or None)
     return render_template_string(
-        TEACHER_HTML, rows=rows, dates=fetch_dates(), date=date
+        TEACHER_HTML,
+        rows=rows,
+        dates=fetch_dates(),
+        date=date,
+        materials=list_materials(),
+        active=_active_material(),
+        msg=request.args.get("msg", ""),
     )
+
+
+@app.route("/teacher/material/upload", methods=["POST"])
+def material_upload():
+    if not teacher_ok():
+        return "권한 없음", 401
+    f = request.files.get("pdf")
+    if not f or not f.filename:
+        return redirect(url_for("teacher_page", msg="파일이 없습니다."))
+    name = safe_name(f.filename)
+    if not name.lower().endswith(".pdf"):
+        return redirect(url_for("teacher_page", msg="PDF 파일만 올릴 수 있습니다."))
+
+    path = material_path(name)
+    f.save(path)
+    size_mb = os.path.getsize(path) / 1024 / 1024
+    if size_mb > MATERIAL_MAX_MB:
+        os.remove(path)
+        return redirect(
+            url_for("teacher_page", msg=f"파일이 너무 큽니다({size_mb:.1f}MB). "
+                                        f"{MATERIAL_MAX_MB}MB 이하만 됩니다.")
+        )
+    try:
+        chars, pages = extract_pdf_text(path)
+    except Exception as e:
+        os.remove(path)
+        return redirect(url_for("teacher_page", msg=f"PDF를 읽지 못했습니다: {e}"))
+
+    if chars == 0:
+        return redirect(
+            url_for(
+                "teacher_page",
+                msg=f"{name}: 글자를 찾지 못했습니다. 스캔 이미지 PDF는 "
+                    "글자 인식이 안 되어 사용할 수 없습니다.",
+            )
+        )
+    set_active_material(name)
+    over = ""
+    if chars > MATERIAL_MAX_CHARS:
+        over = (f" 다만 분량이 많아 앞부분 {MATERIAL_MAX_CHARS}자만 사용합니다"
+                f"(전체 {chars}자).")
+    return redirect(
+        url_for(
+            "teacher_page",
+            msg=f"{name} 올리기 완료 ({pages}쪽, {chars}자). 지금부터 이 자료를 사용합니다.{over}",
+        )
+    )
+
+
+@app.route("/teacher/material/select", methods=["POST"])
+def material_select():
+    if not teacher_ok():
+        return "권한 없음", 401
+    name = safe_name(request.form.get("name", ""))
+    if name and not os.path.exists(material_path(name)):
+        return redirect(url_for("teacher_page", msg="없는 파일입니다."))
+    set_active_material(name)
+    return redirect(
+        url_for(
+            "teacher_page",
+            msg=f"'{name}' 자료를 사용합니다." if name else "자료를 쓰지 않습니다.",
+        )
+    )
+
+
+@app.route("/teacher/material/delete", methods=["POST"])
+def material_delete():
+    if not teacher_ok():
+        return "권한 없음", 401
+    name = safe_name(request.form.get("name", ""))
+    p = material_path(name)
+    if not name or not os.path.exists(p):
+        return redirect(url_for("teacher_page", msg="없는 파일입니다."))
+    os.remove(p)
+    if os.path.exists(p + ".txt"):
+        os.remove(p + ".txt")
+    if _active_material() == name:
+        set_active_material("")
+    return redirect(url_for("teacher_page", msg=f"{name} 삭제했습니다."))
 
 
 @app.route("/teacher/csv")
