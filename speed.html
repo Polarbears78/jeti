@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#050a0f" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<title>AR 속도 변화 측정 (카메라 추적)</title>
+<link rel="stylesheet" href="speed.css" />
+</head>
+<body>
+  <header class="app-header">
+    <a class="home-link" href="index.html">← 실험 목록</a>
+    <h1>AR 속도 변화 측정</h1>
+    <p class="subtitle">카메라로 물체를 추적해 속도 변화를 측정</p>
+  </header>
+
+  <main class="container">
+    <!-- 카메라 배경 + 추적 오버레이 -->
+    <section class="stage" aria-label="AR 측정 화면">
+      <div class="viewport" id="viewport">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas id="overlay"></canvas>
+        <div class="hud" aria-hidden="true">
+          <div class="hud-main">
+            <span class="hud-num" id="speedHud">0.00</span>
+            <span class="hud-unit">m/s</span>
+          </div>
+        </div>
+        <div class="view-hint" id="viewHint">‘AR 시작’을 눌러 카메라를 켜 주세요</div>
+        <span class="rec-dot" id="recDot" aria-hidden="true"></span>
+        <span class="rec-time" id="recTime" aria-hidden="true"></span>
+      </div>
+    </section>
+
+    <!-- 제어 버튼 -->
+    <section class="btn-row" aria-label="시작">
+      <button class="ctl-btn" id="startBtn" type="button">▶ AR 시작 (카메라)</button>
+    </section>
+    <section class="btn-row" aria-label="측정">
+      <button class="ctl-btn primary" id="measureBtn" type="button" disabled>● 측정 시작</button>
+      <button class="ctl-btn" id="calibBtn" type="button" disabled>📏 기준자</button>
+      <button class="ctl-btn" id="resetBtn" type="button">초기화</button>
+    </section>
+
+    <p class="track-tip" id="trackTip">💡 폰을 고정하고, 화면 속 <b>움직이는 물체를 탭</b>하면 바로 측정이 시작됩니다.</p>
+
+    <!-- 측정값 카드 -->
+    <section class="readouts" aria-label="측정값">
+      <div class="card highlight">
+        <span class="card-label">현재 속력 v</span>
+        <span class="card-value"><b id="vVal">0.00</b> m/s</span>
+      </div>
+      <div class="card">
+        <span class="card-label">최대 속력</span>
+        <span class="card-value"><b id="vMaxVal">0.00</b> m/s</span>
+      </div>
+      <div class="card">
+        <span class="card-label">속도 변화 Δv</span>
+        <span class="card-value"><b id="dvVal">0.00</b> m/s</span>
+      </div>
+      <div class="card">
+        <span class="card-label">평균 가속도 a</span>
+        <span class="card-value"><b id="aVal">0.00</b> m/s²</span>
+      </div>
+      <div class="card">
+        <span class="card-label">이동 거리</span>
+        <span class="card-value"><b id="distVal">0.00</b> m</span>
+      </div>
+      <div class="card">
+        <span class="card-label">측정 시간</span>
+        <span class="card-value"><b id="timeVal">0.0</b> s</span>
+      </div>
+    </section>
+
+    <!-- 기준자(보정) -->
+    <section class="controls" id="calibPanel" hidden>
+      <h2 class="ctl-title">📏 기준자 설정</h2>
+      <p class="scale-note">화면 위 노란 기준선의 양 끝을 드래그해서, 실제 길이를 아는 물체(자·책 등)에
+        맞춘 뒤 그 길이를 입력하세요.</p>
+      <label class="opt-row">
+        <span>기준선의 실제 길이</span>
+        <input type="number" id="calibLen" min="0.01" max="100" step="0.01" value="0.30" inputmode="decimal" />
+        <span>m</span>
+      </label>
+      <p class="scale-note" id="scaleNote">현재 환산: 기본값(화면 가로 ≈ 1 m)</p>
+    </section>
+
+    <!-- 다중 섬광 사진 + 구간 분석 -->
+    <section class="photo-section" aria-label="다중 섬광 사진 분석">
+      <div class="graph-head">
+        <h2>📸 다중 섬광 사진</h2>
+        <label class="strobe-opt">섬광 간격
+          <select id="strobeSel">
+            <option value="0.1">0.1초</option>
+            <option value="0.25" selected>0.25초</option>
+            <option value="0.5">0.5초</option>
+            <option value="1">1초</option>
+          </select>
+        </label>
+      </div>
+      <div class="photo-wrap">
+        <canvas id="photo"></canvas>
+        <div class="photo-hint" id="photoHint">측정을 시작하면 섬광 간격마다 물체의 모습이<br />배경 위에 겹쳐 찍힙니다</div>
+      </div>
+      <div class="btn-row">
+        <button class="ctl-btn" id="saveBtn" type="button" disabled>💾 사진 저장</button>
+      </div>
+      <div class="table-wrap">
+        <table class="interval-table">
+          <thead>
+            <tr><th>구간</th><th>시간 (s)</th><th>거리 (cm)</th><th>속력 (m/s)</th></tr>
+          </thead>
+          <tbody id="intervalRows">
+            <tr><td colspan="4" class="empty-row">측정하면 구간별 분석이 표시됩니다</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="tip">💡 실제 다중 섬광 사진처럼 <b>같은 시간 간격</b>마다 물체가 찍힙니다.
+        물체 사이 <b>간격이 넓으면 빠르고, 좁으면 느린</b> 것입니다. 표에서 구간별
+        거리·속력을 비교해 보세요.</p>
+    </section>
+
+    <!-- v-t 그래프 -->
+    <section class="graph-section" aria-label="속력-시간 그래프">
+      <div class="graph-head">
+        <h2>속력–시간 그래프</h2>
+        <span class="legend">최근 8초 · v</span>
+      </div>
+      <canvas id="graph"></canvas>
+    </section>
+
+    <!-- 설명 -->
+    <section class="explain">
+      <h2>카메라로 속도 변화 측정하기</h2>
+      <p>
+        카메라 영상 속에서 물체를 <b>영상 추적</b>하면 시간에 따른 위치 변화를 알 수 있습니다.
+        짧은 시간 Δt 동안 움직인 거리 Δd로 <b>속력</b>을 구하고, 속력이 시간에 따라 변하는
+        정도가 <b>가속도</b>입니다. 결과는 카메라 화면 위에 <b>증강현실(AR)</b>처럼 겹쳐 보여 줍니다.
+      </p>
+      <p class="formula">v = Δd / Δt &nbsp;&nbsp;·&nbsp;&nbsp; a = Δv / Δt</p>
+      <p>
+        ‘측정 시작’을 누르면 <b>0.25초마다 물체의 위치가 노란 점</b>으로 화면에 남아,
+        다중 섬광 사진(스트로보 사진)처럼 물체의 운동을 한눈에 확인할 수 있습니다.
+        <b>점 사이 간격이 넓으면 빠르게</b>, <b>좁으면 느리게</b> 움직인 구간입니다.
+        1초마다 큰 점과 시간 눈금이 표시됩니다.
+      </p>
+      <p class="tip">💡 정확한 측정을 위한 순서: ① 폰을 고정하고 물체가 지나갈 곳을 비춥니다.
+        ② ‘기준자’로 화면 속 실제 길이를 알려 줍니다(예: 30 cm 자).
+        ③ 움직이는 물체를 <b>탭하는 순간 추적과 측정이 바로 시작</b>됩니다.
+        점점 빨라지면 Δv가 +, 느려지면 −가 됩니다. ‘■ 측정 정지’로 멈추고,
+        다른 물체를 탭하면 새로 측정합니다.</p>
+      <p class="tip">📱 카메라는 HTTPS 접속에서만 켜집니다(GitHub Pages는 충족).
+        카메라가 없거나 거부하면 자동으로 <b>데모 화면(움직이는 공)</b>으로 연습할 수 있습니다.
+        물체가 화면과 나란히(카메라와 수직으로) 움직일 때 가장 정확합니다.</p>
+    </section>
+  </main>
+
+  <footer class="app-footer">
+    <p>중학교 과학 · AR 속도 변화 측정</p>
+  </footer>
+
+  <script src="speed.js"></script>
+</body>
+</html>
